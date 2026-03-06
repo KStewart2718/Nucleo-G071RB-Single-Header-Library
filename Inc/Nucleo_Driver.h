@@ -363,14 +363,6 @@ void initialiseMCU()
 {
     // Initialise arduino header pins for anticipated use case (Dx as digital outputs, Ax as analog inputs, Tx/Rx as UART)
     RCC->IOPENR |= 0x3F; // Enable GPIOA-F
-
-    //Initialise USART2 for Serial use
-    RCC->APBENR1 |= 1UL << 17; // Enable USART2 Clock (Needed for Serial)
-    pinMode(PA2, ALTERNATE);   // Set Pins for ALT functions
-    pinMode(PA3, ALTERNATE);
-    GPIOA->AFRL &= ~((0xFU << (2 * 4)) | (0xFU << (3*4)));  // Clear the AF bits for the pins 2 and 3
-    GPIOA->AFRL |= ((0x1U << (2 * 4)) | (0x1U << (3*4)));   // Set the AF bits for AF1
-    
 }
 
 void digitalWrite(Pin_TypeDef pin, Output_Type output)
@@ -387,8 +379,14 @@ void pinMode(Pin_TypeDef pin, PinMode mode)
 // Serial Functions Definitions
 void begin(int baud_rate)
 {
-    USART2->BRR = 16000000UL / baud_rate;
+    //Initialise USART2 for Serial use
+    RCC->APBENR1 |= 1UL << 17; // Enable USART2 Clock (Needed for Serial)
+    pinMode(PA2, ALTERNATE);   // Set Pins for ALT functions
+    pinMode(PA3, ALTERNATE);
+    GPIOA->AFRL &= ~((0xFU << (2 * 4)) | (0xFU << (3*4)));  // Clear the AF bits for the pins 2 and 3
+    GPIOA->AFRL |= ((0x1U << (2 * 4)) | (0x1U << (3*4)));   // Set the AF bits for AF1
 
+    USART2->BRR = 16000000UL / baud_rate;
     USART2->CR1 |= (1UL << 3) | (1U << 0);
 }
 
