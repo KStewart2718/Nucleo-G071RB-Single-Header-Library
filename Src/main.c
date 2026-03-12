@@ -26,17 +26,32 @@ int main(void)
 {
     /* Loop forever */
 	initialiseMCU();
-
-    pinMode(A5, OUTPUT);
-    digitalWrite(A5, HIGH);
-    for(int i = 0; i < 5000000; i++);
-
-    digitalWrite(A5, LOW);
-
-    Serial.begin(9600);
+    pinMode(PA5, OUTPUT);
+    //Serial.begin(9600);
     
     while(1)
     {
-        Serial.println("Hello World!");
+        digitalWrite(PA5, HIGH);
+        delay(1000);
+        digitalWrite(PA5, LOW);
+        delay(1000);
+        /*
+        Serial.print("This is print \r\n");
+        Serial.println("This is println");
+
+        Serial.print("This is print_int - ");
+        Serial.print_int(INT_MAX);
+        Serial.print("\r\n");
+
+        Serial.print("This is println_int - ");
+        Serial.println_int(INT_MAX);
+
+        Serial.print("This is print_float - ");
+        Serial.print_float(12.345678);
+        Serial.print("\r\n");
+
+        Serial.print("This is println_float - ");
+        Serial.println_float(98.765432);
+        */
     }
 }

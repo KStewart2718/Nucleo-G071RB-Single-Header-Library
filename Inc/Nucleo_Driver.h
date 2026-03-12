@@ -2,6 +2,15 @@
 #define NUCLEO_DRIVER_H
 
 #include <stdint.h>
+#include <stdio.h>
+
+// Registers in Core for SysTick
+#define SYST_CSR (uint32_t*)0xE000E010
+#define SYST_RVR (uint32_t*)0xE000E014
+#define SYST_CVR (uint32_t*)0xE000E018
+#define SYST_CALIB (uint32_t*)0xE000E01C
+
+#define SYS_HPR3 (uint32_t*)0xE000ED20
 
 // Types for various register structures on STM32G071RB
 typedef struct {
@@ -350,19 +359,36 @@ void println_int(int num);
 void print_float(float num);
 void println_float(float num);
 
+// Delay Helper Functions
+void delay(unsigned int milliseconds);
+
 // Useful extern variables
 extern Serial_TypeDef Serial;
+extern volatile unsigned int Tick;
 
 #endif
 
 #ifdef STM_DRIVER_IMPLEMENTATION
 
 Serial_TypeDef Serial = {USART2, begin, print, println, print_int, print_float, println_int, println_float};
+volatile unsigned int Tick = 0;
+
+void SysTick_Handler(void)
+{
+    Tick++;
+}
 
 void initialiseMCU()
 {
     // Initialise arduino header pins for anticipated use case (Dx as digital outputs, Ax as analog inputs, Tx/Rx as UART)
     RCC->IOPENR |= 0x3F; // Enable GPIOA-F
+
+    *SYST_RVR &= ~(0x00FFFFFF);
+    *SYST_RVR |= 1000; // Set SysTick Reload value to Maxiumum
+    *SYS_HPR3 |= 0xF << 28;  // Set Priority of SysTick Interrupt
+
+    *SYST_CSR |= 7UL;     // Enable SysTick Timer
+
 }
 
 void digitalWrite(Pin_TypeDef pin, Output_Type output)
@@ -408,22 +434,36 @@ void println(char* str)
 
 void print_int(int num)
 {
-
+    char temp_string[11] = {0};
+    sprintf(temp_string, "%i", num);
+    Serial.print(temp_string);
 }
 
 void println_int(int num)
 {
-
+    print_int(num);
+    Serial.print("\r\n");
 }
 
 void print_float(float num)
 {
-
+    char temp_string[11] = {0};
+    sprintf(temp_string, "%f", num);
+    Serial.print(temp_string);
 }
 
 void println_float(float num)
 {
+    print_float(num);
+    Serial.print("\r\n");
+}
 
+void delay(unsigned int milliseconds)
+{
+    
+    unsigned int start_time = Tick;
+
+    while(Tick < (start_time + (milliseconds)));
 }
 
 #endif
