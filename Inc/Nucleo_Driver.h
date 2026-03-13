@@ -2,15 +2,11 @@
 #define NUCLEO_DRIVER_H
 
 #include <stdint.h>
-#include <stdio.h>
+#include <stdarg.h>
 
-// Registers in Core for SysTick
-#define SYST_CSR (uint32_t*)0xE000E010
-#define SYST_RVR (uint32_t*)0xE000E014
-#define SYST_CVR (uint32_t*)0xE000E018
-#define SYST_CALIB (uint32_t*)0xE000E01C
-
-#define SYS_HPR3 (uint32_t*)0xE000ED20
+// Helpful Constants
+#define SYS_CLOCK_HZ 16000000
+#define ONE_MS_TICKS ((SYS_CLOCK_HZ)/1000)
 
 // Types for various register structures on STM32G071RB
 typedef struct {
@@ -167,6 +163,7 @@ typedef struct{
     volatile uint32_t BRR; // Write only
 } GPIO_TypeDef;
 
+//Useful Enums for Code Clarity 
 typedef enum{
     PIN_0,
     PIN_1,
@@ -194,19 +191,40 @@ typedef enum{
     UNSET
 } PinMode;
 
-typedef struct{
-    GPIO_TypeDef* port;
-    PinNumber num;
-} Pin_TypeDef;
-
 typedef enum{
     LOW,
     HIGH
 } Output_Type;
 
+// Useful Structures for Code Clarity and Implementation
+typedef struct{
+    GPIO_TypeDef* port;
+    PinNumber num;
+} Pin_TypeDef;
+
+typedef struct{
+    USART_TypeDef* usart;
+    void (*begin)(int);
+    void (*print)(char*);
+    void (*println)(char*);
+    void (*print_int)(int);
+    void (*print_float)(float);
+    void (*println_int)(int);
+    void (*println_float)(float);
+} Serial_TypeDef;
+
+// Registers in Core for SysTick
+#define SYST_CSR (uint32_t*)0xE000E010
+#define SYST_RVR (uint32_t*)0xE000E014
+#define SYST_CVR (uint32_t*)0xE000E018
+#define SYST_CALIB (uint32_t*)0xE000E01C
+#define SYS_HPR3 (uint32_t*)0xE000ED20
+
+// Reset and Clock Control Register Address and Alias
 #define RCC_BaseAddr 0x40021000
 #define RCC ((RCC_TypeDef*)RCC_BaseAddr)
 
+// GPIO Addresses and Aliases 
 #define GPIO_OFFSET 0x400
 
 #define GPIOA_BaseAddr 0x50000000
@@ -227,35 +245,19 @@ typedef enum{
 #define GPIOF_BaseAddr (GPIOA_BaseAddr + (5 * GPIO_OFFSET))
 #define GPIOF ((GPIO_TypeDef*)GPIOF_BaseAddr)
 
-#define GPIOx_MODER_ALL_OUTPUT_MASK 0x555555F5
-
-// Aliases for USART Memory Mapping
-
+// USART Addresses and Aliases
 #define USART1_BaseAddr 0x40013800
 #define USART2_BaseAddr 0x40004400
 #define USART3_BaseAddr 0x40004800
 #define USART4_BaseAddr 0x40004C00
 
 #define USART1 ((USART_TypeDef*)USART1_BaseAddr)
-#define USART2 ((USART_TypeDef*)USART2_BaseAddr) // Connected to Virtual COM port - Will be used for Serial Methods
+#define USART2 ((USART_TypeDef*)USART2_BaseAddr) //Connects to Virtual COM port
 #define USART3 ((USART_TypeDef*)USART3_BaseAddr)
 #define USART4 ((USART_TypeDef*)USART4_BaseAddr)
 
-typedef struct{
-    USART_TypeDef* usart;
-    void (*begin)(int);
-    void (*print)(char*);
-    void (*println)(char*);
-    //void (*print_char)(char);
-    //void (*print_str)(char*);
-    void (*print_int)(int);
-    void (*print_float)(float);
-    //void (*println_char)(char);
-    //void (*println_str)(char*);
-    void (*println_int)(int);
-    void (*println_float)(float);
-} Serial_TypeDef;
 
+// Pin Aliases for STM32 Pin Labels and Arduino Pin Labels
 #define PA0 (Pin_TypeDef){GPIOA, PIN_0}
 #define PA1 (Pin_TypeDef){GPIOA, PIN_1}
 #define PA2 (Pin_TypeDef){GPIOA, PIN_2}
@@ -345,8 +347,31 @@ typedef struct{
 #define D14 PB9     // I2C_SDA
 #define D15 PB8     // I2C_SCL
 
-// Initialisation and Pin Control Functions
+// Communication Peripheral Pin Aliases
+#define I2C_SDA D14
+#define I2C_SCL D15
+
+#define UART1_RX D0
+#define UART1_TX D1
+
+#define SPI1_SCK D13
+#define SPI1_MISO D12
+#define SPI1_MOSI D11
+#define SPI1_CS D10
+
+#define SERIAL_TX PA2
+#define SERIAL_RX PA3
+
+// Led Pin Alias
+#define LED_PIN PA5
+
+// Initialisation Functions
 void initialiseMCU(void);
+void SysTickInit(uint32_t ticks);
+void GPIOInit(void);
+void SerialInit(void);
+
+// Pin Control Functions
 void digitalWrite(Pin_TypeDef pin, Output_Type output);
 void pinMode(Pin_TypeDef pin, PinMode mode);
 
@@ -359,7 +384,7 @@ void println_int(int num);
 void print_float(float num);
 void println_float(float num);
 
-// Delay Helper Functions
+// Delay Helper Function
 void delay(unsigned int milliseconds);
 
 // Useful extern variables
@@ -370,49 +395,176 @@ extern volatile unsigned int Tick;
 
 #ifdef STM_DRIVER_IMPLEMENTATION
 
-Serial_TypeDef Serial = {USART2, begin, print, println, print_int, print_float, println_int, println_float};
+// Helper Variable Definitions
+Serial_TypeDef Serial = {USART2, begin, print, println, \
+    print_int, print_float, println_int, println_float};
 volatile unsigned int Tick = 0;
 
+// Static Helper Functions
+static void reverse_string(char* str, int length)
+{
+    int start = 0;
+    int end = length - 1;
+    while(start < end)
+    {
+        char tmp = str[start];
+        str[start] = str[end];
+        str[end] = tmp;
+        start++;
+        end--;
+    }
+}
+
+static char* tiny_itoa(unsigned int num, char* str, int base, int is_signed)
+{
+    int i = 0;
+    int negative = 0;
+
+    if(num == 0)
+    {
+        str[i++] = '0';
+        str[i] = '\0';
+        return str
+    }
+
+    if(is_signed && base == 10 && num < 0)
+    {
+        negative = 1;
+        num = -num;
+    }
+
+    while(num != 0)
+    {
+        int rem = num % base;
+        str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+        num /= base;
+    }
+
+    if(negative)
+    {
+        str[i++] = '-';
+    }
+
+    str[i] = '\0';
+    reverse_string(str, i);
+    return str
+}
+
+static void tiny_sprintf(char* buffer, const char* format, ...)
+[
+    va_list args;
+    va_start(args, format);
+
+    char tmp_buff[33];
+
+    while(*format != '\0')
+    {
+        if(*format == '%')
+        {
+            format++;
+
+            switch(*format)
+            }
+                case 'i':
+                    int i = va_arg(args, int);
+                    tiny_itoa(i, tmp_buff, 10, 1);
+                    char* t = tmp_buff;
+                    while(*t)
+                    {
+                        *buffer++ = *t++;
+                    }
+                    break;
+                case 'f':
+                    
+                    break;
+                default:
+                    break;
+            }
+        }
+        else{
+            *buffer++ = *format;
+        }
+    }
+
+    *buffer = '\0';
+    va_end(args);
+]
+
+// Interrupt Handler for tracking millisecond time steps
 void SysTick_Handler(void)
 {
     Tick++;
 }
 
+// Initialise core features for basic MCU use
 void initialiseMCU()
 {
-    // Initialise arduino header pins for anticipated use case (Dx as digital outputs, Ax as analog inputs, Tx/Rx as UART)
-    RCC->IOPENR |= 0x3F; // Enable GPIOA-F
+    SysTickInit(ONE_MS_TICKS); 
 
+    GPIOInit();
+}
+
+// Setup the SysTick timer for use in implementing a basic "delay" function
+void SysTickInit(uint32_t ticks)
+{
+    //Clear SysTick Reset Value Register
     *SYST_RVR &= ~(0x00FFFFFF);
-    *SYST_RVR |= 1000; // Set SysTick Reload value to Maxiumum
-    *SYS_HPR3 |= 0xF << 28;  // Set Priority of SysTick Interrupt
 
-    *SYST_CSR |= 7UL;     // Enable SysTick Timer
+    // Set SysTick Reload value to 1ms worth of clock ticks (Clock is 16MHz)
+    *SYST_RVR |= ticks - 1; 
 
+    // Set Priority of SysTick Interrupt to highest (0 is highest)
+    *SYS_HPR3 &= ~(0xFUL) << 28; 
+
+    // Enable SysTick Timer and Interrupt
+    *SYST_CSR |= 7UL; 
+}
+
+void GPIOInit()
+{
+    // Enable GPIOA-F Clocks
+    RCC->IOPENR |= 0x3F;
 }
 
 void digitalWrite(Pin_TypeDef pin, Output_Type output)
 {
-    (pin.port)->BSRR |= 1UL << (pin.num + 16*(!output)); // Set or reset pin by writing to Bit Set/Reset Register (BSSR) [pg. 241 of STM32G0x1 reference manual]
+    // Set or reset pin by writing to Bit Set/Reset Register (BSSR) 
+    // [pg. 241 of STM32G0x1 reference manual]
+    (pin.port)->BSRR |= 1UL << (pin.num + 16*(!output));
 }
 
 void pinMode(Pin_TypeDef pin, PinMode mode)
 {
-    (pin.port)->MODER &= ~(0x3UL << (2 * pin.num)); // Clear current mode by zeroing the relevant bits
-    (pin.port)->MODER |= (mode << (2 * pin.num)); // Set new mode
+    // Clear current mode by zeroing the relevant bits
+    (pin.port)->MODER &= ~(0x3UL << (2 * pin.num)); 
+
+    // Set new mode
+    (pin.port)->MODER |= (mode << (2 * pin.num)); 
 }
 
 // Serial Functions Definitions
 void begin(int baud_rate)
 {
     //Initialise USART2 for Serial use
-    RCC->APBENR1 |= 1UL << 17; // Enable USART2 Clock (Needed for Serial)
-    pinMode(PA2, ALTERNATE);   // Set Pins for ALT functions
-    pinMode(PA3, ALTERNATE);
-    GPIOA->AFRL &= ~((0xFU << (2 * 4)) | (0xFU << (3*4)));  // Clear the AF bits for the pins 2 and 3
-    GPIOA->AFRL |= ((0x1U << (2 * 4)) | (0x1U << (3*4)));   // Set the AF bits for AF1
 
+    // Enable USART2 Clock
+    RCC->APBENR1 |= 1UL << 17; 
+
+    // Set Serial Pins for ALT functions
+    pinMode(SERIAL_TX, ALTERNATE);   
+    pinMode(SERIAL_RX, ALTERNATE);
+
+    // Clear the Alternate Function bits for pins 2 and 3
+    GPIOA->AFRL &= ~((0xFU << (2 * 4)) | (0xFU << (3*4)));
+
+    // Set the AF bits for AF1
+    GPIOA->AFRL |= ((0x1U << (2 * 4)) | (0x1U << (3*4)));   
+
+    // Set baud rate
     USART2->BRR = 16000000UL / baud_rate;
+
+    // Enables the Transmitter and the USART peripheral
+    // [Pg. 1036 in the STM32G0x1 Reference Manual]
     USART2->CR1 |= (1UL << 3) | (1U << 0);
 }
 
@@ -459,8 +611,7 @@ void println_float(float num)
 }
 
 void delay(unsigned int milliseconds)
-{
-    
+{    
     unsigned int start_time = Tick;
 
     while(Tick < (start_time + (milliseconds)));
