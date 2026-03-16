@@ -401,6 +401,17 @@ Serial_TypeDef Serial = {USART2, begin, print, println, \
 volatile unsigned int Tick = 0;
 
 // Static Helper Functions
+static int int_pow(int num, int power)
+{
+    int base_num = num;
+    while(--power)
+    {
+        num *= base_num;
+    }
+
+    return num;
+}
+
 static void reverse_string(char* str, int length)
 {
     int start = 0;
@@ -415,7 +426,7 @@ static void reverse_string(char* str, int length)
     }
 }
 
-static char* tiny_itoa(unsigned int num, char* str, int base, int is_signed)
+static int tiny_itoa(int num, char* str, int trailing_zeros)
 {
     int i = 0;
     int negative = 0;
@@ -424,10 +435,10 @@ static char* tiny_itoa(unsigned int num, char* str, int base, int is_signed)
     {
         str[i++] = '0';
         str[i] = '\0';
-        return str
+        return 1;
     }
 
-    if(is_signed && base == 10 && num < 0)
+    if(num < 0)
     {
         negative = 1;
         num = -num;
@@ -435,9 +446,14 @@ static char* tiny_itoa(unsigned int num, char* str, int base, int is_signed)
 
     while(num != 0)
     {
-        int rem = num % base;
+        int rem = num % 10;
         str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
-        num /= base;
+        num /= 10;
+    }
+
+    while(i < trailing_zeros)
+    {
+        str[i++] = '0';
     }
 
     if(negative)
@@ -447,48 +463,84 @@ static char* tiny_itoa(unsigned int num, char* str, int base, int is_signed)
 
     str[i] = '\0';
     reverse_string(str, i);
-    return str
+    return i;
+}
+
+static void tiny_ftoa(float num, char* str, int precision)
+{
+    char temp_buffer[32];
+
+    int integer_part = (int)num;
+    float fractional_part = num - integer_part;
+    
+    if(fractional_part < 0) fractional_part = -fractional_part;
+
+    int length = tiny_itoa(integer_part, temp_buffer, 0);
+    
+    if(precision > 0)
+    {
+        temp_buffer[length++] = '.';
+        fractional_part = fractional_part * (float)int_pow(10, precision);
+
+        length += tiny_itoa((int)fractional_part+0.5f, temp_buffer + length, precision);
+    }
+
+    for(int j = 0; j < length; j++)
+    {
+        str[j] = temp_buffer[j];
+    }
 }
 
 static void tiny_sprintf(char* buffer, const char* format, ...)
-[
+{
     va_list args;
     va_start(args, format);
 
-    char tmp_buff[33];
+    char tmp_buff[12];
+    int integer_num = 0;
+    double floating_point_num = 0;
 
     while(*format != '\0')
     {
+
         if(*format == '%')
         {
             format++;
 
             switch(*format)
-            }
+            {
                 case 'i':
-                    int i = va_arg(args, int);
-                    tiny_itoa(i, tmp_buff, 10, 1);
+                    integer_num = va_arg(args, int);
+                    tiny_itoa(integer_num, tmp_buff, 0);
                     char* t = tmp_buff;
                     while(*t)
                     {
                         *buffer++ = *t++;
                     }
+                    format++;
                     break;
                 case 'f':
-                    
+                    floating_point_num = va_arg(args, double);
+                    tiny_ftoa(floating_point_num, tmp_buff, 6);
+                    char* tmp = tmp_buff;
+                    while(*tmp)
+                    {
+                        *buffer++ = *tmp++;
+                    }
+                    format++;
                     break;
                 default:
                     break;
             }
         }
         else{
-            *buffer++ = *format;
+            *buffer++ = *format++;
         }
     }
 
     *buffer = '\0';
     va_end(args);
-]
+}
 
 // Interrupt Handler for tracking millisecond time steps
 void SysTick_Handler(void)
@@ -545,7 +597,7 @@ void pinMode(Pin_TypeDef pin, PinMode mode)
 // Serial Functions Definitions
 void begin(int baud_rate)
 {
-    //Initialise USART2 for Serial use
+    // Initialise USART2 for Serial use
 
     // Enable USART2 Clock
     RCC->APBENR1 |= 1UL << 17; 
@@ -570,10 +622,15 @@ void begin(int baud_rate)
 
 void print(char* str)
 {
+    // NB: Strings (char*) always end with a null terminator (a 0) in C
+    
+    // While we're not at the end of the string
     while(*str)
     {
+        // Wait until transmit buffer is not full
         while(!(USART2->ISR & (1UL << 7)));
-
+        
+        // Write the next char of the string into the transmit data register
         USART2->TDR = *str++;
     }
 }
@@ -587,7 +644,7 @@ void println(char* str)
 void print_int(int num)
 {
     char temp_string[11] = {0};
-    sprintf(temp_string, "%i", num);
+    tiny_sprintf(temp_string, "%i", num);
     Serial.print(temp_string);
 }
 
@@ -599,8 +656,8 @@ void println_int(int num)
 
 void print_float(float num)
 {
-    char temp_string[11] = {0};
-    sprintf(temp_string, "%f", num);
+    char temp_string[16] = {0};
+    tiny_sprintf(temp_string, "%f", num);
     Serial.print(temp_string);
 }
 

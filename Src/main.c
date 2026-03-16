@@ -35,23 +35,17 @@ int main(void)
         delay(1000);
         digitalWrite(PA5, LOW);
         delay(1000);
-        /*
-        Serial.print("This is print \r\n");
-        Serial.println("This is println");
-
+/*
         Serial.print("This is print_int - ");
-        Serial.print_int(INT_MAX);
+        Serial.print_int(4);
         Serial.print("\r\n");
 
         Serial.print("This is println_int - ");
-        Serial.println_int(INT_MAX);
+        Serial.println_int(-121598);
 
         Serial.print("This is print_float - ");
-        Serial.print_float(12.345678);
+        Serial.print_float(-1.000005f);
         Serial.print("\r\n");
-
-        Serial.print("This is println_float - ");
-        Serial.println_float(98.765432);
-        */
+*/
     }
 }
