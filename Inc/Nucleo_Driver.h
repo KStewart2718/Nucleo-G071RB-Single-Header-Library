@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include <stddef.h>
+
+// Look into Infrared Interface (Simple wireless capabilities)
 
 // Helpful Constants
 #define SYS_CLOCK_HZ 16000000
@@ -224,6 +227,7 @@ typedef struct{
 #define RCC_BaseAddr 0x40021000
 #define RCC ((RCC_TypeDef*)RCC_BaseAddr)
 
+
 // GPIO Addresses and Aliases 
 #define GPIO_OFFSET 0x400
 
@@ -256,6 +260,34 @@ typedef struct{
 #define USART3 ((USART_TypeDef*)USART3_BaseAddr)
 #define USART4 ((USART_TypeDef*)USART4_BaseAddr)
 
+// Timer Addresses and Aliases
+
+/* Timer Clock Base List
+*  2,3,4,6,7 - APBENR1
+*  1,14,15,16,17 - APBENR2 
+*/
+
+#define TIM1_BaseAddr 0x40012C00
+#define TIM2_BaseAddr 0x40000000
+#define TIM3_BaseAddr 0x40000400
+#define TIM4_BaseAddr 0x40000800
+#define TIM6_BaseAddr 0x40001000
+#define TIM7_BaseAddr 0x40001400
+#define TIM14_BaseAddr 0x40002000
+#define TIM15_BaseAddr 0x40014000
+#define TIM16_BaseAddr 0x40014400
+#define TIM17_BaseAddr 0x40014800
+
+#define TIM1 ((TIM_TypeDef*)TIM1_BaseAddr)
+#define TIM2 ((TIM_TypeDef*)TIM2_BaseAddr)
+#define TIM3 ((TIM_TypeDef*)TIM3_BaseAddr)
+#define TIM4 ((TIM_TypeDef*)TIM4_BaseAddr)
+#define TIM6 ((TIM_TypeDef*)TIM6_BaseAddr)
+#define TIM7 ((TIM_TypeDef*)TIM7_BaseAddr)
+#define TIM14 ((TIM_TypeDef*)TIM14_BaseAddr)
+#define TIM15 ((TIM_TypeDef*)TIM15_BaseAddr)
+#define TIM16 ((TIM_TypeDef*)TIM16_BaseAddr)
+#define TIM17 ((TIM_TypeDef*)TIM17_BaseAddr)
 
 // Pin Aliases for STM32 Pin Labels and Arduino Pin Labels
 #define PA0 (Pin_TypeDef){GPIOA, PIN_0}
@@ -365,6 +397,14 @@ typedef struct{
 // Led Pin Alias
 #define LED_PIN PA5
 
+// PWM Pin-Timer Associations
+#define PA7_PWM_TIMER TIM3    // AF1, TIM3_CH2
+#define PB0_PWM_TIMER TIM3    // AF1, TIM3_CH3
+#define PB3_PWM_TIMER TIM1    // AF1, TIM1_CH2
+#define PB4_PWM_TIMER TIM3    // AF1, TIM3_CH1
+#define PB14_PWM_TIMER TIM15  // AF5, TIM15_CH1
+#define PC7_PMW_TIMER TIM2    // AF2, TIM2_CH4
+
 // Initialisation Functions
 void initialiseMCU(void);
 void SysTickInit(uint32_t ticks);
@@ -372,9 +412,12 @@ void GPIOInit(void);
 void SerialInit(void);
 
 // Pin Control Functions
-void digitalWrite(Pin_TypeDef pin, Output_Type output);
 void pinMode(Pin_TypeDef pin, PinMode mode);
+void digitalWrite(Pin_TypeDef pin, Output_Type output);
+void analogWrite(Pin_TypeDef pin, uint8_t duty_cycle);
 
+// Pin Control LL functions
+void setPinAltFunction(Pin_TypeDef pin, uint8_t alt_func_num);
 // Serial Helper Functions
 void begin(int baud_rate);
 void print(char* str);
@@ -482,7 +525,7 @@ static void tiny_ftoa(float num, char* str, int precision)
         temp_buffer[length++] = '.';
         fractional_part = fractional_part * (float)int_pow(10, precision);
 
-        length += tiny_itoa((int)fractional_part+0.5f, temp_buffer + length, precision);
+        length += tiny_itoa((int)(fractional_part+0.5f), temp_buffer + length, precision);
     }
 
     for(int j = 0; j < length; j++)
@@ -496,13 +539,12 @@ static void tiny_sprintf(char* buffer, const char* format, ...)
     va_list args;
     va_start(args, format);
 
-    char tmp_buff[12];
+    char tmp_buff[12] = {0};
     int integer_num = 0;
     double floating_point_num = 0;
 
     while(*format != '\0')
     {
-
         if(*format == '%')
         {
             format++;
@@ -542,11 +584,105 @@ static void tiny_sprintf(char* buffer, const char* format, ...)
     va_end(args);
 }
 
+static void setAltFunction(Pin_TypeDef pin, uint8_t alt_func)
+{
+    if(pin.num < 8)
+    {
+        (pin.port)->AFRL &= ~(0xFUL) << 4*(pin.num);
+        (pin.port)->AFRL |= alt_func << 4*(pin.num);
+    }
+    else
+    {
+        (pin.port)->AFRH &= ~(0xFUL) << 4*(pin.num);
+        (pin.port)->AFRH |= alt_func << 4*(pin.num);
+    }
+}
+
+static void setPWMMode(Pin_TypeDef pin)
+{
+    uint32_t compare_val = ((pin.port)->MODER & (3UL << 2*(pin.num)));
+    if(compare_val != (2UL << 2*(pin.num)))
+    {
+        pinMode(pin, ALTERNATE);
+    }
+
+    switch(pin.num)
+    {
+        case 0:
+            if(pin.port == GPIOB) setAltFunction(pin, 1); // TIM3_CH3
+            break;
+        case 3:
+            if(pin.port == GPIOB) setAltFunction(pin, 1); // TIM1_CH2
+            break;
+        case 4:
+            if(pin.port == GPIOB) setAltFunction(pin, 1); // TIM3_CH1
+            break;
+        case 7:
+            if(pin.port == GPIOA) setAltFunction(pin, 1); // TIM3_CH2
+            else if(pin.port == GPIOC) setAltFunction(pin, 2); // TIM2_CH4
+            break;
+        case 14:
+            if(pin.port == GPIOB) setAltFunction(pin, 5); // TIM15_CH1
+            break;
+        default:
+            break;
+    }
+}
+
+static void setupTimer(Pin_TypeDef pin, uint8_t duty_cycle)
+{
+    TIM_TypeDef* timer;
+
+    switch(pin.num)
+    {
+        case 0: 
+            timer = TIM3;
+            break;
+        case 3:
+            timer = TIM1;
+            break;
+        case 4:
+            timer = TIM3;
+            break;
+        case 7:
+            if(pin.port == GPIOA) timer = TIM3; 
+            else if(pin.port == GPIOC) timer = TIM2;
+            else timer = NULL;
+            break;
+        case 14:
+            timer = TIM15;
+            break;
+        default: 
+            break;
+    }
+
+    if(timer == NULL)
+    {
+        return;
+    }
+
+    float duty_cycle_percentage = duty_cycle / 255.0f;
+
+    timer->PSC &= 0UL; // Zero the Prescaler
+    timer->ARR |= 799; // Should result in 20kHz PWM Frequency with 0 Prescaler
+    timer->CCR1 |= (unsigned int)(800 * duty_cycle_percentage);
+    timer->CCMR1 |= 3UL << 5; // Sets PWM Mode 1 (High -> Low)
+    timer->CR1 |= 1UL; // Enable the counter
+
+}
+
+
 // Interrupt Handler for tracking millisecond time steps
 void SysTick_Handler(void)
 {
     Tick++;
 }
+
+/**************************************************************
+*
+*   User Facing Functions
+*   
+**************************************************************/
 
 // Initialise core features for basic MCU use
 void initialiseMCU()
@@ -578,13 +714,6 @@ void GPIOInit()
     RCC->IOPENR |= 0x3F;
 }
 
-void digitalWrite(Pin_TypeDef pin, Output_Type output)
-{
-    // Set or reset pin by writing to Bit Set/Reset Register (BSSR) 
-    // [pg. 241 of STM32G0x1 reference manual]
-    (pin.port)->BSRR |= 1UL << (pin.num + 16*(!output));
-}
-
 void pinMode(Pin_TypeDef pin, PinMode mode)
 {
     // Clear current mode by zeroing the relevant bits
@@ -592,6 +721,19 @@ void pinMode(Pin_TypeDef pin, PinMode mode)
 
     // Set new mode
     (pin.port)->MODER |= (mode << (2 * pin.num)); 
+}
+
+void digitalWrite(Pin_TypeDef pin, Output_Type output)
+{
+    // Set or reset pin by writing to Bit Set/Reset Register (BSSR) 
+    // [pg. 241 of STM32G0x1 reference manual]
+    (pin.port)->BSRR |= 1UL << (pin.num + 16*(!output));
+}
+
+void analogWrite(Pin_TypeDef pin, uint8_t duty_cycle)
+{
+    setPWMMode(pin);
+    setupTimer(pin, duty_cycle);
 }
 
 // Serial Functions Definitions

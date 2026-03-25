@@ -16,7 +16,6 @@
  ******************************************************************************
  */
 
-#include <limits.h>
 #include <stdint.h>
 #define STM_DRIVER_IMPLEMENTATION
 #include "Nucleo_Driver.h"
@@ -27,6 +26,8 @@ int main(void)
     /* Loop forever */
 	initialiseMCU();
     pinMode(PA5, OUTPUT);
+    pinMode(PA7, ALTERNATE);
+    analogWrite(PB4, 128);
     //Serial.begin(9600);
     
     while(1)
@@ -35,6 +36,18 @@ int main(void)
         delay(1000);
         digitalWrite(PA5, LOW);
         delay(1000);
+
+       // Serial.print("This is print_float - ");
+       //Serial.print_float(-1.000005f);
+       // Serial.print("\r\n");
+
+       // Serial.print("This is print_float - ");
+       // Serial.print_float(-1.005f);
+       // Serial.print("\r\n");
+
+       // Serial.print("This is print_float - ");
+       // Serial.print_float(-1.51f);
+      //  Serial.print("\r\n");
 /*
         Serial.print("This is print_int - ");
         Serial.print_int(4);
