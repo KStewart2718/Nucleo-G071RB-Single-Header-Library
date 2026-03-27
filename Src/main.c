@@ -23,42 +23,25 @@
 
 int main(void)
 {
-    /* Loop forever */
+    // Setup
 	initialiseMCU();
-    pinMode(PA5, OUTPUT);
-    pinMode(PA7, ALTERNATE);
-    analogWrite(PB4, 128);
-    //Serial.begin(9600);
+    pinMode(PB4, ALTERNATE);
+    analogWrite(PB4, 26);
     
+    /* Loop forever */
     while(1)
     {
-        digitalWrite(PA5, HIGH);
-        delay(1000);
-        digitalWrite(PA5, LOW);
-        delay(1000);
+        for(int i = 0; i < 256; i++)
+        {
+            analogWrite(PB4, i);
+            delay(100);
+        }
 
-       // Serial.print("This is print_float - ");
-       //Serial.print_float(-1.000005f);
-       // Serial.print("\r\n");
-
-       // Serial.print("This is print_float - ");
-       // Serial.print_float(-1.005f);
-       // Serial.print("\r\n");
-
-       // Serial.print("This is print_float - ");
-       // Serial.print_float(-1.51f);
-      //  Serial.print("\r\n");
-/*
-        Serial.print("This is print_int - ");
-        Serial.print_int(4);
-        Serial.print("\r\n");
-
-        Serial.print("This is println_int - ");
-        Serial.println_int(-121598);
-
-        Serial.print("This is print_float - ");
-        Serial.print_float(-1.000005f);
-        Serial.print("\r\n");
-*/
+        for(int j = 255; j > 1; j--)
+        {
+            analogWrite(PB4, j);
+            delay(100);
+        }
+        
     }
 }

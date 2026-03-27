@@ -82,44 +82,44 @@ typedef struct {
 } DAC_TypeDef;
 
 typedef struct{
-    uint32_t CR1;
-    uint32_t CR2;
-    uint32_t CR3;
-    uint32_t BRR;
-    uint32_t GTPR;
-    uint32_t RTOR;
-    uint32_t RQR;
-    uint32_t ISR;
-    uint32_t ICR;
-    uint32_t RDR;
-    uint32_t TDR;
-    uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 } USART_TypeDef;
 
 typedef struct{
-    uint32_t CR1;
-    uint32_t CR2;
-    uint32_t OAR1;
-    uint32_t OAR2;
-    uint32_t TIMINGR;
-    uint32_t TIMEOUTR;
-    uint32_t ISR;
-    uint32_t ICR;
-    uint32_t PECR;
-    uint32_t RXDR;
-    uint32_t TXDR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t OAR1;
+    volatile uint32_t OAR2;
+    volatile uint32_t TIMINGR;
+    volatile uint32_t TIMEOUTR;
+    volatile uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t PECR;
+    volatile uint32_t RXDR;
+    volatile uint32_t TXDR;
 } I2C_TypeDef;
 
 typedef struct{
-    uint32_t CR1;
-    uint32_t CR2;
-    uint32_t SR;
-    uint32_t DR;
-    uint32_t CRCPR;
-    uint32_t RXCRCR;
-    uint32_t TXCRCR;
-    uint32_t I2SCFGR;
-    uint32_t I2SPR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SR;
+    volatile uint32_t DR;
+    volatile uint32_t CRCPR;
+    volatile uint32_t RXCRCR;
+    volatile uint32_t TXCRCR;
+    volatile uint32_t I2SCFGR;
+    volatile uint32_t I2SPR;
 } SPI_TypeDef;
 
 typedef struct {
@@ -660,15 +660,20 @@ static void setupTimer(Pin_TypeDef pin, uint8_t duty_cycle)
     {
         return;
     }
+    //if(timer->CR1 & 1UL) return; // Return if timer is already on.
 
     float duty_cycle_percentage = duty_cycle / 255.0f;
-
+    
+    timer->CCMR1 |= (3UL << 5) | (1UL << 3); // Sets PWM Mode 1 (High -> Low)
+    timer->CCER |= 1UL;
+    timer->CR1 |= (1UL << 7);
     timer->PSC &= 0UL; // Zero the Prescaler
+    timer->ARR &= 0UL; // Zero the Auto-Reload Register
     timer->ARR |= 799; // Should result in 20kHz PWM Frequency with 0 Prescaler
+    timer->CCR1 &= 0UL;
     timer->CCR1 |= (unsigned int)(800 * duty_cycle_percentage);
-    timer->CCMR1 |= 3UL << 5; // Sets PWM Mode 1 (High -> Low)
+    timer->EGR |= 1UL;
     timer->CR1 |= 1UL; // Enable the counter
-
 }
 
 
@@ -690,6 +695,7 @@ void initialiseMCU()
     SysTickInit(ONE_MS_TICKS); 
 
     GPIOInit();
+    RCC->APBENR1 |= 1UL << 1; // Enable TIM3
 }
 
 // Setup the SysTick timer for use in implementing a basic "delay" function
