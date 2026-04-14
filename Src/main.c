@@ -20,28 +20,20 @@
 #define STM_DRIVER_IMPLEMENTATION
 #include "Nucleo_Driver.h"
 
+#define OLED_ADDR 0x78
 
 int main(void)
 {
     // Setup
 	initialiseMCU();
-    pinMode(PB4, ALTERNATE);
-    analogWrite(PB4, 26);
+    I2C_Init();
+
+    I2C_WriteByte(OLED_ADDR, 0x0);
     
     /* Loop forever */
     while(1)
     {
-        for(int i = 0; i < 256; i++)
-        {
-            analogWrite(PB4, i);
-            delay(100);
-        }
 
-        for(int j = 255; j > 1; j--)
-        {
-            analogWrite(PB4, j);
-            delay(100);
-        }
         
     }
 }

@@ -7,163 +7,176 @@
 
 // Look into Infrared Interface (Simple wireless capabilities)
 
+// Useful Type Aliasing
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+
+typedef float f32;
+typedef double f64;
+
+
 // Helpful Constants
 #define SYS_CLOCK_HZ 16000000
 #define ONE_MS_TICKS ((SYS_CLOCK_HZ)/1000)
 
 // Types for various register structures on STM32G071RB
 typedef struct {
-    volatile uint32_t CR;
-    volatile uint32_t ICSCR;
-    volatile uint32_t CFGR;
-    volatile uint32_t PLLCFGR;
-    volatile uint32_t RESERVED;
-    volatile uint32_t CRRCR;
-    volatile uint32_t CIER;
-    volatile uint32_t CIFR;
-    volatile uint32_t CICR;
-    volatile uint32_t IOPRSTR;
-    volatile uint32_t AHBRSTR;
-    volatile uint32_t APBRSTR1;
-    volatile uint32_t APBRSTR2;
-    volatile uint32_t IOPENR;
-    volatile uint32_t AHBENR;
-    volatile uint32_t APBENR1;
-    volatile uint32_t APBENR2;
-    volatile uint32_t IOPSMENR;
-    volatile uint32_t AHBSMENR;
-    volatile uint32_t APBSMENR1;
-    volatile uint32_t APBSMENR2;
-    volatile uint32_t CCIPR;
-    volatile uint32_t CCIPR2;
-    volatile uint32_t BDCR;
-    volatile uint32_t CSR;
+    volatile u32 CR;
+    volatile u32 ICSCR;
+    volatile u32 CFGR;
+    volatile u32 PLLCFGR;
+    volatile u32 RESERVED;
+    volatile u32 CRRCR;
+    volatile u32 CIER;
+    volatile u32 CIFR;
+    volatile u32 CICR;
+    volatile u32 IOPRSTR;
+    volatile u32 AHBRSTR;
+    volatile u32 APBRSTR1;
+    volatile u32 APBRSTR2;
+    volatile u32 IOPENR;
+    volatile u32 AHBENR;
+    volatile u32 APBENR1;
+    volatile u32 APBENR2;
+    volatile u32 IOPSMENR;
+    volatile u32 AHBSMENR;
+    volatile u32 APBSMENR1;
+    volatile u32 APBSMENR2;
+    volatile u32 CCIPR;
+    volatile u32 CCIPR2;
+    volatile u32 BDCR;
+    volatile u32 CSR;
 } RCC_TypeDef;
 
 typedef struct {
-    volatile uint32_t ISR;
-    volatile uint32_t IER;
-    volatile uint32_t CR;
-    volatile uint32_t CFGR1;
-    volatile uint32_t CFGR2;
-    volatile uint32_t SMPR;
-    uint32_t RESERVED_BLOCK_1[2];
-    volatile uint32_t AWD1TR;
-    volatile uint32_t AWD2TR;
-    volatile uint32_t CHSELR;
-    volatile uint32_t AWD3TR;
-    uint32_t RESERVED_BLOCK_2[4];
-    volatile uint32_t DR;
-    volatile uint32_t AWD2CR;
-    volatile uint32_t AWD3CR;
+    volatile u32 ISR;
+    volatile u32 IER;
+    volatile u32 CR;
+    volatile u32 CFGR1;
+    volatile u32 CFGR2;
+    volatile u32 SMPR;
+    u32 RESERVED_BLOCK_1[2];
+    volatile u32 AWD1TR;
+    volatile u32 AWD2TR;
+    volatile u32 CHSELR;
+    volatile u32 AWD3TR;
+    u32 RESERVED_BLOCK_2[4];
+    volatile u32 DR;
+    volatile u32 AWD2CR;
+    volatile u32 AWD3CR;
 } ADC_TypeDef;
 
 typedef struct {
-    volatile uint32_t CR;
-    volatile uint32_t SWTRGR;
-    volatile uint32_t DHR12R1;
-    volatile uint32_t DHR12L1;
-    volatile uint32_t DHR8R1;
-    volatile uint32_t DHR12R2;
-    volatile uint32_t DHR12L2;
-    volatile uint32_t DHR8R2;
-    volatile uint32_t DHR12RD;
-    volatile uint32_t DHR12LD;
-    volatile uint32_t DHR8RD;
-    volatile uint32_t DOR1;
-    volatile uint32_t DOR2;
-    volatile uint32_t SR;
-    volatile uint32_t CCR;
-    volatile uint32_t MCR;
-    volatile uint32_t SHSR1;
-    volatile uint32_t SHSR2;
-    volatile uint32_t SHHR;
-    volatile uint32_t SHRR;
+    volatile u32 CR;
+    volatile u32 SWTRGR;
+    volatile u32 DHR12R1;
+    volatile u32 DHR12L1;
+    volatile u32 DHR8R1;
+    volatile u32 DHR12R2;
+    volatile u32 DHR12L2;
+    volatile u32 DHR8R2;
+    volatile u32 DHR12RD;
+    volatile u32 DHR12LD;
+    volatile u32 DHR8RD;
+    volatile u32 DOR1;
+    volatile u32 DOR2;
+    volatile u32 SR;
+    volatile u32 CCR;
+    volatile u32 MCR;
+    volatile u32 SHSR1;
+    volatile u32 SHSR2;
+    volatile u32 SHHR;
+    volatile u32 SHRR;
 } DAC_TypeDef;
 
 typedef struct{
-    volatile uint32_t CR1;
-    volatile uint32_t CR2;
-    volatile uint32_t CR3;
-    volatile uint32_t BRR;
-    volatile uint32_t GTPR;
-    volatile uint32_t RTOR;
-    volatile uint32_t RQR;
-    volatile uint32_t ISR;
-    volatile uint32_t ICR;
-    volatile uint32_t RDR;
-    volatile uint32_t TDR;
-    volatile uint32_t PRESC;
+    volatile u32 CR1;
+    volatile u32 CR2;
+    volatile u32 CR3;
+    volatile u32 BRR;
+    volatile u32 GTPR;
+    volatile u32 RTOR;
+    volatile u32 RQR;
+    volatile u32 ISR;
+    volatile u32 ICR;
+    volatile u32 RDR;
+    volatile u32 TDR;
+    volatile u32 PRESC;
 } USART_TypeDef;
 
 typedef struct{
-    volatile uint32_t CR1;
-    volatile uint32_t CR2;
-    volatile uint32_t OAR1;
-    volatile uint32_t OAR2;
-    volatile uint32_t TIMINGR;
-    volatile uint32_t TIMEOUTR;
-    volatile uint32_t ISR;
-    volatile uint32_t ICR;
-    volatile uint32_t PECR;
-    volatile uint32_t RXDR;
-    volatile uint32_t TXDR;
+    volatile u32 CR1;
+    volatile u32 CR2;
+    volatile u32 OAR1;
+    volatile u32 OAR2;
+    volatile u32 TIMINGR;
+    volatile u32 TIMEOUTR;
+    volatile u32 ISR;
+    volatile u32 ICR;
+    volatile u32 PECR;
+    volatile u32 RXDR;
+    volatile u32 TXDR;
 } I2C_TypeDef;
 
 typedef struct{
-    volatile uint32_t CR1;
-    volatile uint32_t CR2;
-    volatile uint32_t SR;
-    volatile uint32_t DR;
-    volatile uint32_t CRCPR;
-    volatile uint32_t RXCRCR;
-    volatile uint32_t TXCRCR;
-    volatile uint32_t I2SCFGR;
-    volatile uint32_t I2SPR;
+    volatile u32 CR1;
+    volatile u32 CR2;
+    volatile u32 SR;
+    volatile u32 DR;
+    volatile u32 CRCPR;
+    volatile u32 RXCRCR;
+    volatile u32 TXCRCR;
+    volatile u32 I2SCFGR;
+    volatile u32 I2SPR;
 } SPI_TypeDef;
 
 typedef struct {
-    volatile uint32_t CR1;
-    volatile uint32_t CR2;
-    volatile uint32_t SMCR;
-    volatile uint32_t DIER;
-    volatile uint32_t SR;
-    volatile uint32_t EGR;
-    volatile uint32_t CCMR1;
-    volatile uint32_t CCMR2;
-    volatile uint32_t CCER;
-    volatile uint32_t CNT;
-    volatile uint32_t PSC;
-    volatile uint32_t ARR;
-    volatile uint32_t RCR;
-    volatile uint32_t CCR1;
-    volatile uint32_t CCR2;
-    volatile uint32_t CCR3;
-    volatile uint32_t CCR4;
-    volatile uint32_t BDTR;
-    volatile uint32_t DCR;
-    volatile uint32_t DMAR;
-    volatile uint32_t OR1;
-    volatile uint32_t CCMR3;
-    volatile uint32_t CCR5;
-    volatile uint32_t CCR6;
-    volatile uint32_t AF1;
-    volatile uint32_t AF2;
-    volatile uint32_t TISEL;
+    volatile u32 CR1;
+    volatile u32 CR2;
+    volatile u32 SMCR;
+    volatile u32 DIER;
+    volatile u32 SR;
+    volatile u32 EGR;
+    volatile u32 CCMR1;
+    volatile u32 CCMR2;
+    volatile u32 CCER;
+    volatile u32 CNT;
+    volatile u32 PSC;
+    volatile u32 ARR;
+    volatile u32 RCR;
+    volatile u32 CCR1;
+    volatile u32 CCR2;
+    volatile u32 CCR3;
+    volatile u32 CCR4;
+    volatile u32 BDTR;
+    volatile u32 DCR;
+    volatile u32 DMAR;
+    volatile u32 OR1;
+    volatile u32 CCMR3;
+    volatile u32 CCR5;
+    volatile u32 CCR6;
+    volatile u32 AF1;
+    volatile u32 AF2;
+    volatile u32 TISEL;
 } TIM_TypeDef;
 
 typedef struct{
-    volatile uint32_t MODER;
-    volatile uint32_t OTYPER;
-    volatile uint32_t OSPEEDR;
-    volatile uint32_t PUPDR;
-    volatile uint32_t IDR;
-    volatile uint32_t ODR;
-    volatile uint32_t BSRR; // Write only
-    volatile uint32_t LCKR;
-    volatile uint32_t AFRL;
-    volatile uint32_t AFRH;
-    volatile uint32_t BRR; // Write only
+    volatile u32 MODER;
+    volatile u32 OTYPER;
+    volatile u32 OSPEEDR;
+    volatile u32 PUPDR;
+    volatile u32 IDR;
+    volatile u32 ODR;
+    volatile u32 BSRR; // Write only
+    volatile u32 LCKR;
+    volatile u32 AFRL;
+    volatile u32 AFRH;
+    volatile u32 BRR; // Write only
 } GPIO_TypeDef;
 
 //Useful Enums for Code Clarity 
@@ -207,21 +220,21 @@ typedef struct{
 
 typedef struct{
     USART_TypeDef* usart;
-    void (*begin)(int);
-    void (*print)(char*);
-    void (*println)(char*);
-    void (*print_int)(int);
-    void (*print_float)(float);
-    void (*println_int)(int);
-    void (*println_float)(float);
+    void (*begin)(i32);
+    void (*print)(i8*);
+    void (*println)(i8*);
+    void (*print_int)(i32);
+    void (*print_float)(f32);
+    void (*println_int)(i32);
+    void (*println_float)(f32);
 } Serial_TypeDef;
 
 // Registers in Core for SysTick
-#define SYST_CSR (uint32_t*)0xE000E010
-#define SYST_RVR (uint32_t*)0xE000E014
-#define SYST_CVR (uint32_t*)0xE000E018
-#define SYST_CALIB (uint32_t*)0xE000E01C
-#define SYS_HPR3 (uint32_t*)0xE000ED20
+#define SYST_CSR (u32*)0xE000E010
+#define SYST_RVR (u32*)0xE000E014
+#define SYST_CVR (u32*)0xE000E018
+#define SYST_CALIB (u32*)0xE000E01C
+#define SYS_HPR3 (u32*)0xE000ED20
 
 // Reset and Clock Control Register Address and Alias
 #define RCC_BaseAddr 0x40021000
@@ -259,6 +272,18 @@ typedef struct{
 #define USART2 ((USART_TypeDef*)USART2_BaseAddr) //Connects to Virtual COM port
 #define USART3 ((USART_TypeDef*)USART3_BaseAddr)
 #define USART4 ((USART_TypeDef*)USART4_BaseAddr)
+
+// I2C Addresses and Aliases
+// Clocks enabled in APBENR1, I2C 1 - Bit 21, I2C2 - Bit 22, I2C3 - Bit 23
+#define I2C1_BaseAddr 0x40005400
+#define I2C2_BaseAddr 0x40005800
+#define I2C3_BaseAddr 0x40008800
+
+#define I2C1 ((I2C_TypeDef*)I2C1_BaseAddr)
+#define I2C2 ((I2C_TypeDef*)I2C2_BaseAddr)
+#define I2C3 ((I2C_TypeDef*)I2C3_BaseAddr)
+
+#define I2C1_CLKEN (1UL << 21)
 
 // Timer Addresses and Aliases
 
@@ -407,7 +432,7 @@ typedef struct{
 
 // Initialisation Functions
 void initialiseMCU(void);
-void SysTickInit(uint32_t ticks);
+void SysTickInit(u32 ticks);
 void GPIOInit(void);
 void SerialInit(void);
 
@@ -417,22 +442,29 @@ void digitalWrite(Pin_TypeDef pin, Output_Type output);
 void analogWrite(Pin_TypeDef pin, uint8_t duty_cycle);
 
 // Pin Control LL functions
-void setPinAltFunction(Pin_TypeDef pin, uint8_t alt_func_num);
+//void setAltFunction(Pin_TypeDef pin, uint8_t alt_func_num);
+
 // Serial Helper Functions
-void begin(int baud_rate);
-void print(char* str);
-void println(char* str);
-void print_int(int num);
-void println_int(int num);
-void print_float(float num);
-void println_float(float num);
+void begin(i32 baud_rate);
+void print(i8* str);
+void println(i8* str);
+void print_int(i32 num);
+void println_int(i32 num);
+void print_float(f32 num);
+void println_float(f32 num);
+
+// I2C Helper Functions
+void I2C_Init(void);
+void I2C_WriteByte(u8 addr, u8 data);
+void I2C_ReadByte(u8 addr, u8* data_buffer);
+void I2C_WriteBytes(u8 addr, u8* data, u16 length);
 
 // Delay Helper Function
-void delay(unsigned int milliseconds);
+void delay(u32 milliseconds);
 
 // Useful extern variables
 extern Serial_TypeDef Serial;
-extern volatile unsigned int Tick;
+extern volatile u32 Tick;
 
 #endif
 
@@ -441,12 +473,13 @@ extern volatile unsigned int Tick;
 // Helper Variable Definitions
 Serial_TypeDef Serial = {USART2, begin, print, println, \
     print_int, print_float, println_int, println_float};
-volatile unsigned int Tick = 0;
+
+volatile u32 Tick = 0;
 
 // Static Helper Functions
-static int int_pow(int num, int power)
+static i32 int_pow(i32 num, i32 power)
 {
-    int base_num = num;
+    i32 base_num = num;
     while(--power)
     {
         num *= base_num;
@@ -455,13 +488,13 @@ static int int_pow(int num, int power)
     return num;
 }
 
-static void reverse_string(char* str, int length)
+static void reverse_string(u8* str, u32 length)
 {
-    int start = 0;
-    int end = length - 1;
+    i32 start = 0;
+    i32 end = length - 1;
     while(start < end)
     {
-        char tmp = str[start];
+        u8 tmp = str[start];
         str[start] = str[end];
         str[end] = tmp;
         start++;
@@ -469,10 +502,10 @@ static void reverse_string(char* str, int length)
     }
 }
 
-static int tiny_itoa(int num, char* str, int trailing_zeros)
+static i32 tiny_itoa(i32 num, u8* str, i32 trailing_zeros)
 {
-    int i = 0;
-    int negative = 0;
+    i32 i = 0;
+    i32 negative = 0;
 
     if(num == 0)
     {
@@ -489,7 +522,7 @@ static int tiny_itoa(int num, char* str, int trailing_zeros)
 
     while(num != 0)
     {
-        int rem = num % 10;
+        i32 rem = num % 10;
         str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
         num /= 10;
     }
@@ -509,39 +542,39 @@ static int tiny_itoa(int num, char* str, int trailing_zeros)
     return i;
 }
 
-static void tiny_ftoa(float num, char* str, int precision)
+static void tiny_ftoa(f32 num, u8* str, i32 precision)
 {
-    char temp_buffer[32];
+    u8 temp_buffer[32];
 
-    int integer_part = (int)num;
-    float fractional_part = num - integer_part;
+    i32 integer_part = (i32)num;
+    f32 fractional_part = num - integer_part;
     
     if(fractional_part < 0) fractional_part = -fractional_part;
 
-    int length = tiny_itoa(integer_part, temp_buffer, 0);
+    i32 length = tiny_itoa(integer_part, temp_buffer, 0);
     
     if(precision > 0)
     {
         temp_buffer[length++] = '.';
-        fractional_part = fractional_part * (float)int_pow(10, precision);
+        fractional_part = fractional_part * (f32)int_pow(10, precision);
 
-        length += tiny_itoa((int)(fractional_part+0.5f), temp_buffer + length, precision);
+        length += tiny_itoa((i32)(fractional_part+0.5f), temp_buffer + length, precision);
     }
 
-    for(int j = 0; j < length; j++)
+    for(i32 j = 0; j < length; j++)
     {
         str[j] = temp_buffer[j];
     }
 }
 
-static void tiny_sprintf(char* buffer, const char* format, ...)
+static void tiny_sprintf(u8* buffer, const u8* format, ...)
 {
     va_list args;
     va_start(args, format);
 
-    char tmp_buff[12] = {0};
-    int integer_num = 0;
-    double floating_point_num = 0;
+    u8 tmp_buff[12] = {0};
+    i32 integer_num = 0;
+    f64 floating_point_num = 0;
 
     while(*format != '\0')
     {
@@ -552,9 +585,9 @@ static void tiny_sprintf(char* buffer, const char* format, ...)
             switch(*format)
             {
                 case 'i':
-                    integer_num = va_arg(args, int);
+                    integer_num = va_arg(args, i32);
                     tiny_itoa(integer_num, tmp_buff, 0);
-                    char* t = tmp_buff;
+                    u8* t = tmp_buff;
                     while(*t)
                     {
                         *buffer++ = *t++;
@@ -562,9 +595,9 @@ static void tiny_sprintf(char* buffer, const char* format, ...)
                     format++;
                     break;
                 case 'f':
-                    floating_point_num = va_arg(args, double);
+                    floating_point_num = va_arg(args, f64);
                     tiny_ftoa(floating_point_num, tmp_buff, 6);
-                    char* tmp = tmp_buff;
+                    u8* tmp = tmp_buff;
                     while(*tmp)
                     {
                         *buffer++ = *tmp++;
@@ -584,7 +617,7 @@ static void tiny_sprintf(char* buffer, const char* format, ...)
     va_end(args);
 }
 
-static void setAltFunction(Pin_TypeDef pin, uint8_t alt_func)
+static void setAltFunction(Pin_TypeDef pin, u8 alt_func)
 {
     if(pin.num < 8)
     {
@@ -600,7 +633,7 @@ static void setAltFunction(Pin_TypeDef pin, uint8_t alt_func)
 
 static void setPWMMode(Pin_TypeDef pin)
 {
-    uint32_t compare_val = ((pin.port)->MODER & (3UL << 2*(pin.num)));
+    u32 compare_val = ((pin.port)->MODER & (3UL << 2*(pin.num)));
     if(compare_val != (2UL << 2*(pin.num)))
     {
         pinMode(pin, ALTERNATE);
@@ -629,7 +662,7 @@ static void setPWMMode(Pin_TypeDef pin)
     }
 }
 
-static void setupTimer(Pin_TypeDef pin, uint8_t duty_cycle)
+static void setupTimer(Pin_TypeDef pin, u8 duty_cycle)
 {
     TIM_TypeDef* timer;
 
@@ -662,7 +695,7 @@ static void setupTimer(Pin_TypeDef pin, uint8_t duty_cycle)
     }
     //if(timer->CR1 & 1UL) return; // Return if timer is already on.
 
-    float duty_cycle_percentage = duty_cycle / 255.0f;
+    f32 duty_cycle_percentage = duty_cycle / 255.0f;
     
     timer->CCMR1 |= (3UL << 5) | (1UL << 3); // Sets PWM Mode 1 (High -> Low)
     timer->CCER |= 1UL;
@@ -671,7 +704,7 @@ static void setupTimer(Pin_TypeDef pin, uint8_t duty_cycle)
     timer->ARR &= 0UL; // Zero the Auto-Reload Register
     timer->ARR |= 799; // Should result in 20kHz PWM Frequency with 0 Prescaler
     timer->CCR1 &= 0UL;
-    timer->CCR1 |= (unsigned int)(800 * duty_cycle_percentage);
+    timer->CCR1 |= (u32)(800 * duty_cycle_percentage);
     timer->EGR |= 1UL;
     timer->CR1 |= 1UL; // Enable the counter
 }
@@ -699,7 +732,7 @@ void initialiseMCU()
 }
 
 // Setup the SysTick timer for use in implementing a basic "delay" function
-void SysTickInit(uint32_t ticks)
+void SysTickInit(u32 ticks)
 {
     //Clear SysTick Reset Value Register
     *SYST_RVR &= ~(0x00FFFFFF);
@@ -736,14 +769,14 @@ void digitalWrite(Pin_TypeDef pin, Output_Type output)
     (pin.port)->BSRR |= 1UL << (pin.num + 16*(!output));
 }
 
-void analogWrite(Pin_TypeDef pin, uint8_t duty_cycle)
+void analogWrite(Pin_TypeDef pin, u8 duty_cycle)
 {
     setPWMMode(pin);
     setupTimer(pin, duty_cycle);
 }
 
 // Serial Functions Definitions
-void begin(int baud_rate)
+void begin(i32 baud_rate)
 {
     // Initialise USART2 for Serial use
 
@@ -768,7 +801,7 @@ void begin(int baud_rate)
     USART2->CR1 |= (1UL << 3) | (1U << 0);
 }
 
-void print(char* str)
+void print(i8* str)
 {
     // NB: Strings (char*) always end with a null terminator (a 0) in C
     
@@ -778,46 +811,112 @@ void print(char* str)
         // Wait until transmit buffer is not full
         while(!(USART2->ISR & (1UL << 7)));
         
-        // Write the next char of the string into the transmit data register
+        // Write the next char of the string into the transmit data register  
         USART2->TDR = *str++;
     }
 }
 
-void println(char* str)
+void println(i8* str)
 {
     Serial.print(str);
     Serial.print("\r\n");
 }
 
-void print_int(int num)
+void print_int(i32 num)
 {
     char temp_string[11] = {0};
     tiny_sprintf(temp_string, "%i", num);
     Serial.print(temp_string);
 }
 
-void println_int(int num)
+void println_int(i32 num)
 {
     print_int(num);
     Serial.print("\r\n");
 }
 
-void print_float(float num)
+void print_float(f32 num)
 {
-    char temp_string[16] = {0};
+    u8 temp_string[16] = {0};
     tiny_sprintf(temp_string, "%f", num);
     Serial.print(temp_string);
 }
 
-void println_float(float num)
+void println_float(f32 num)
 {
     print_float(num);
     Serial.print("\r\n");
 }
 
-void delay(unsigned int milliseconds)
+/*
+*
+*   I2C Helper Functions
+*
+*
+*/
+
+void I2C_Init(void)
+{
+    RCC->APBENR1 |= 1UL << 21;  // Enable I2C1 Clock
+
+    pinMode(D14, ALTERNATE);
+    pinMode(D15, ALTERNATE);
+
+    setAltFunction(D14, 6);
+    setAltFunction(D15, 6);
+
+    GPIOB->OTYPER |= (1UL << 8) | (1UL << 9);   // Set pins to Open-Drain
+
+    I2C1->CR1 &= ~(1UL);    // Ensures peripheral is disabled
+    // Sets timer up for 100kHz bus assuming a 16MHz input clock (AI Gen)
+    I2C1->TIMINGR = (3UL << 28) |\
+                    (0xFUL << 8)|\
+                    (0x13UL)    |\
+                    (0x4UL << 20)|\
+                    (0x2UL << 16);  
+    
+    I2C1->CR1 |= 1UL;   // Enable the peripheral
+}
+
+void I2C_WriteByte(u8 addr, u8 data)
+{
+    
+    while(!(I2C1->ISR & (1UL)));   // Wait for TX Register to be empty
+    I2C1->TXDR = data;
+
+    I2C1->CR2 |= (addr) | (1UL << 16) | (1UL << 25) | (1UL << 13);
+
+    while(!(I2C1->ISR & (1UL << 5)));   // Wait for STOP Flag
+    I2C1->ICR &= ~(1UL << 5);   // Clear STOP Flag
+}
+
+void I2C_ReadByte(u8 addr, u8* data_buffer)
+{
+    I2C1->CR2 |= (addr) | (1UL << 16) | (1UL << 25) | (1UL << 10) | (1UL << 13);
+
+    while(!(I2C1->ISR & ~(1UL << 2)));
+    *data_buffer = I2C1->RXDR;
+
+    while(!(I2C1->ISR & (1UL << 5)));   // Wait for STOP Flag
+    I2C1->ICR &= ~(1UL << 5);   // Clear STOP Flag
+}
+
+void I2C_WriteBytes(u8 addr, u8* data, u16 length)
+{
+    return;
+}
+
+
+
+/*
+*
+*   Helper Function Definitions
+*
+*
+*/
+void delay(u32 milliseconds)
 {    
-    unsigned int start_time = Tick;
+    u32 start_time = Tick;
 
     while(Tick < (start_time + (milliseconds)));
 }
