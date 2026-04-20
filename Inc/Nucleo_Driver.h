@@ -221,8 +221,8 @@ typedef struct{
 typedef struct{
     USART_TypeDef* usart;
     void (*begin)(i32);
-    void (*print)(i8*);
-    void (*println)(i8*);
+    void (*print)(char*);
+    void (*println)(char*);
     void (*print_int)(i32);
     void (*print_float)(f32);
     void (*println_int)(i32);
@@ -446,8 +446,8 @@ void analogWrite(Pin_TypeDef pin, uint8_t duty_cycle);
 
 // Serial Helper Functions
 void begin(i32 baud_rate);
-void print(i8* str);
-void println(i8* str);
+void print(char* str);
+void println(char* str);
 void print_int(i32 num);
 void println_int(i32 num);
 void print_float(f32 num);
@@ -488,13 +488,13 @@ static i32 int_pow(i32 num, i32 power)
     return num;
 }
 
-static void reverse_string(u8* str, u32 length)
+static void reverse_string(char* str, u32 length)
 {
     i32 start = 0;
     i32 end = length - 1;
     while(start < end)
     {
-        u8 tmp = str[start];
+        char tmp = str[start];
         str[start] = str[end];
         str[end] = tmp;
         start++;
@@ -502,7 +502,7 @@ static void reverse_string(u8* str, u32 length)
     }
 }
 
-static i32 tiny_itoa(i32 num, u8* str, i32 trailing_zeros)
+static i32 tiny_itoa(i32 num, char* str, i32 trailing_zeros)
 {
     i32 i = 0;
     i32 negative = 0;
@@ -542,9 +542,9 @@ static i32 tiny_itoa(i32 num, u8* str, i32 trailing_zeros)
     return i;
 }
 
-static void tiny_ftoa(f32 num, u8* str, i32 precision)
+static void tiny_ftoa(f32 num, char* str, i32 precision)
 {
-    u8 temp_buffer[32];
+    char temp_buffer[32];
 
     i32 integer_part = (i32)num;
     f32 fractional_part = num - integer_part;
@@ -567,12 +567,12 @@ static void tiny_ftoa(f32 num, u8* str, i32 precision)
     }
 }
 
-static void tiny_sprintf(u8* buffer, const u8* format, ...)
+static void tiny_sprintf(char* buffer, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
 
-    u8 tmp_buff[12] = {0};
+    char tmp_buff[12] = {0};
     i32 integer_num = 0;
     f64 floating_point_num = 0;
 
@@ -587,7 +587,7 @@ static void tiny_sprintf(u8* buffer, const u8* format, ...)
                 case 'i':
                     integer_num = va_arg(args, i32);
                     tiny_itoa(integer_num, tmp_buff, 0);
-                    u8* t = tmp_buff;
+                    char* t = tmp_buff;
                     while(*t)
                     {
                         *buffer++ = *t++;
@@ -597,7 +597,7 @@ static void tiny_sprintf(u8* buffer, const u8* format, ...)
                 case 'f':
                     floating_point_num = va_arg(args, f64);
                     tiny_ftoa(floating_point_num, tmp_buff, 6);
-                    u8* tmp = tmp_buff;
+                    char* tmp = tmp_buff;
                     while(*tmp)
                     {
                         *buffer++ = *tmp++;
@@ -626,8 +626,8 @@ static void setAltFunction(Pin_TypeDef pin, u8 alt_func)
     }
     else
     {
-        (pin.port)->AFRH &= ~(0xFUL) << 4*(pin.num);
-        (pin.port)->AFRH |= alt_func << 4*(pin.num);
+        (pin.port)->AFRH &= ~(0xFUL) << 4*(pin.num - 8);
+        (pin.port)->AFRH |= alt_func << 4*(pin.num - 8);
     }
 }
 
@@ -801,7 +801,7 @@ void begin(i32 baud_rate)
     USART2->CR1 |= (1UL << 3) | (1U << 0);
 }
 
-void print(i8* str)
+void print(char* str)
 {
     // NB: Strings (char*) always end with a null terminator (a 0) in C
     
@@ -816,7 +816,7 @@ void print(i8* str)
     }
 }
 
-void println(i8* str)
+void println(char* str)
 {
     Serial.print(str);
     Serial.print("\r\n");
@@ -837,7 +837,7 @@ void println_int(i32 num)
 
 void print_float(f32 num)
 {
-    u8 temp_string[16] = {0};
+    char temp_string[16] = {0};
     tiny_sprintf(temp_string, "%f", num);
     Serial.print(temp_string);
 }
@@ -857,6 +857,9 @@ void println_float(f32 num)
 
 void I2C_Init(void)
 {
+
+    I2C1->CR1 &= ~(1UL);    // Ensures peripheral is disabled
+
     RCC->APBENR1 |= 1UL << 21;  // Enable I2C1 Clock
 
     pinMode(D14, ALTERNATE);
@@ -866,47 +869,83 @@ void I2C_Init(void)
     setAltFunction(D15, 6);
 
     GPIOB->OTYPER |= (1UL << 8) | (1UL << 9);   // Set pins to Open-Drain
+    GPIOB->OSPEEDR |= (3UL << 8*2) | (3UL << 9*2); // Set pins to High Speed
+    GPIOB->PUPDR |= (1UL << 8*2) | (1UL << 9*2);
+    
 
-    I2C1->CR1 &= ~(1UL);    // Ensures peripheral is disabled
-    // Sets timer up for 100kHz bus assuming a 16MHz input clock (AI Gen)
-    I2C1->TIMINGR = (3UL << 28) |\
-                    (0xFUL << 8)|\
-                    (0x13UL)    |\
-                    (0x4UL << 20)|\
-                    (0x2UL << 16);  
+    // Sets timer up for 100kHz bus assuming a 16MHz input clock (Value from default MXCube build)
+    I2C1->TIMINGR = 0x00503D5A;
     
     I2C1->CR1 |= 1UL;   // Enable the peripheral
 }
 
 void I2C_WriteByte(u8 addr, u8 data)
 {
+    I2C1->CR2 &= 0UL; // Clear CR2 Register
+    I2C1->CR2 |= (addr) | (1UL << 16) | (1UL << 25) | (1UL << 13);
     
     while(!(I2C1->ISR & (1UL)));   // Wait for TX Register to be empty
     I2C1->TXDR = data;
 
-    I2C1->CR2 |= (addr) | (1UL << 16) | (1UL << 25) | (1UL << 13);
-
     while(!(I2C1->ISR & (1UL << 5)));   // Wait for STOP Flag
-    I2C1->ICR &= ~(1UL << 5);   // Clear STOP Flag
+    I2C1->ICR |= (1UL << 5);   // Clear STOP Flag
 }
 
 void I2C_ReadByte(u8 addr, u8* data_buffer)
 {
+    I2C1->CR2 &= 0UL; // Clear CR2 Register
     I2C1->CR2 |= (addr) | (1UL << 16) | (1UL << 25) | (1UL << 10) | (1UL << 13);
 
-    while(!(I2C1->ISR & ~(1UL << 2)));
+    while(!(I2C1->ISR & (1UL << 2)));
     *data_buffer = I2C1->RXDR;
 
     while(!(I2C1->ISR & (1UL << 5)));   // Wait for STOP Flag
-    I2C1->ICR &= ~(1UL << 5);   // Clear STOP Flag
+    I2C1->ICR |= (1UL << 5);   // Clear STOP Flag
 }
 
 void I2C_WriteBytes(u8 addr, u8* data, u16 length)
 {
-    return;
+
+    I2C1->CR2 &= 0UL; // Clear CR2 Register
+    I2C1->CR2 |= (addr) | (length << 16) | (1UL << 25) | (1UL << 13);
+
+    while(!(I2C1->ISR & 1UL));
+    I2C1->TXDR = data[0];
+    
+
+    if(length > 1)
+    {
+        for(u16 i = 1; i < length; i++)
+        {
+            while(!(I2C1->ISR & 1UL));
+            I2C1->TXDR = data[i]; 
+        }
+    }
+
+    while(!(I2C1->ISR & (1UL << 5)));
+    I2C1->ICR |= (1UL << 5);
 }
 
+void I2C_ReadBytes(u8 addr, u8* data_buffer, u16 length)
+{
+    I2C1->CR2 &= 0UL; // Clear CR2 Register
+    I2C1->CR2 |= (addr) | (length << 16) | (1UL << 25) | (1UL << 10) | (1UL << 13);
 
+    while(!(I2C1->ISR & (1UL << 2)));
+    *data_buffer = I2C1->RXDR;
+
+    if(length > 1)
+    {
+        for(u8 i = 1; i < length; i++)
+        {
+            while(!(I2C1->ISR & (1UL << 2)));
+            *(data_buffer + i) = I2C1->RXDR;        
+        }
+    }
+
+    while(!(I2C1->ISR & (1UL << 5)));
+    I2C1->ICR |= (1UL << 5);
+}
 
 /*
 *

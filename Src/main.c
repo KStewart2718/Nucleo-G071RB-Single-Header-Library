@@ -17,10 +17,11 @@
  */
 
 #include <stdint.h>
+#include <sys/errno.h>
 #define STM_DRIVER_IMPLEMENTATION
 #include "Nucleo_Driver.h"
 
-#define OLED_ADDR 0x78
+#define E_COMPASS_ADDR (0x1D << 1)
 
 int main(void)
 {
@@ -28,7 +29,48 @@ int main(void)
 	initialiseMCU();
     I2C_Init();
 
-    I2C_WriteByte(OLED_ADDR, 0x0);
+    Serial.begin(9600);
+
+    u8 who_am_i_data = 0;
+    u8 read_data[6] = {0};
+    u8 CTRL_2_Data = 0;
+
+    I2C_WriteByte(E_COMPASS_ADDR, 0x0F);
+    I2C_ReadByte(E_COMPASS_ADDR, &who_am_i_data);
+
+    Serial.print("Who am I data: ");
+    Serial.println_int(who_am_i_data);
+
+    u8 test_data[2] = {0x20, 0x67};
+
+    I2C_WriteBytes(E_COMPASS_ADDR, test_data, 2);
+    I2C_WriteByte(E_COMPASS_ADDR, 0x20);
+    I2C_ReadByte(E_COMPASS_ADDR, &CTRL_2_Data);
+
+
+    delay(100);
+
+    I2C_WriteByte(E_COMPASS_ADDR, 0xA8);
+    I2C_ReadBytes(E_COMPASS_ADDR, read_data, 6);
+
+    for(u8 i = 0; i < 6; i++)
+    {   
+        Serial.println("Hahahahaha");
+        Serial.println_int(read_data[i]);
+    }
+
+    while(1);
+
+    I2C_WriteByte(E_COMPASS_ADDR, 0x0F);
+    I2C_ReadByte(E_COMPASS_ADDR, &who_am_i_data);
+
+    if(who_am_i_data == 0x49)
+    {
+        Serial.print("Data Match!");
+    }
+    else {
+        Serial.print("Data Mismatch :(");
+    }
     
     /* Loop forever */
     while(1)
