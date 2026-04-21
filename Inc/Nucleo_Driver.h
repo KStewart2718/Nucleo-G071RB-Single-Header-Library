@@ -664,49 +664,99 @@ static void setPWMMode(Pin_TypeDef pin)
 
 static void setupTimer(Pin_TypeDef pin, u8 duty_cycle)
 {
+    f32 duty_cycle_percent = duty_cycle / 255.0f;
     TIM_TypeDef* timer;
 
     switch(pin.num)
     {
         case 0: 
-            timer = TIM3;
+            RCC->APBENR1 |= (1UL << 1);                     // Enable TIM3 Clock
+            TIM3->CCMR2 |= (3UL << 5) | (1UL << 3);         // Set Output Compare 3
+            TIM3->CCER  |= (1UL << 8);                      // Enable Capture/Compare Output 3 (CH3 of Timer)
+            TIM3->CR1 |= (1UL << 7);
+            TIM3->PSC &= 0UL;
+            TIM3->ARR &= 0UL;
+            TIM3->ARR |= 799;
+            TIM3->CCR3 &= 0UL;
+            TIM3->CCR3 |= (u32)(800 * duty_cycle_percent);
+            TIM3->EGR |= 1UL;
+            TIM3->CR1 |= 1UL;
             break;
         case 3:
-            timer = TIM1;
+            RCC->APBENR2 |= (1UL << 11);                    // Enable TIM1 Clock
+            TIM1->CCMR1 |= (3UL << 13) | (1UL << 11);       // Set Output Compare 2 
+            TIM1->CCER |= (1UL << 4);                       // Enable Compare 2 Output
+            TIM1->BDTR |= (1UL << 14);                      // Set Automatic Output Enable
+            TIM1->CR1 |=  (1UL << 7);                       // Enable Auto-Reload Preload
+            TIM1->PSC &= 0UL;                               // Zero the Prescaler 
+            TIM1->ARR &= 0UL;                               // Zero the Auto-Reload Register
+            TIM1->ARR |= 799;                               // Set Auto-Reload Register to generate 20kHz Frequency
+            TIM1->CCR2 &= 0UL;                              // Zero the Cap/Comp Register 
+            TIM1->CCR2 |= (u32)(800 * duty_cycle_percent);  // Set value for "on" time of PWM signal
+            TIM1->EGR |= 1UL;                               // Updates registers
+            TIM1->CR1 |= 1UL;                               // Enable Counter
             break;
         case 4:
-            timer = TIM3;
+            RCC->APBENR1 |= (1UL << 1);
+            TIM3->CCMR1 |= (3UL << 5) | (1UL << 3);     // Set Out Comp 3
+            TIM3->CCER  |= (1UL);
+            TIM3->CR1 |= (1UL << 7);
+            TIM3->PSC &= 0UL;
+            TIM3->ARR &= 0UL;
+            TIM3->ARR |= 799;
+            TIM3->CCR1 &= 0UL;
+            TIM3->CCR1 |= (u32)(800 * duty_cycle_percent);
+            TIM3->EGR |= 1UL;
+            TIM3->CR1 |= 1UL;
             break;
         case 7:
-            if(pin.port == GPIOA) timer = TIM3; 
-            else if(pin.port == GPIOC) timer = TIM2;
-            else timer = NULL;
+            if(pin.port == GPIOA)
+            {
+                RCC->APBENR1 |= (1UL << 1);
+                TIM3->CCMR1 |= (3UL << 13) | (1UL << 11);     // Set Out Comp 3
+                TIM3->CCER  |= (1UL << 4);
+                TIM3->CR1 |= (1UL << 7);
+                TIM3->PSC &= 0UL;
+                TIM3->ARR &= 0UL;
+                TIM3->ARR |= 799;
+                TIM3->CCR2 &= 0UL;
+                TIM3->CCR2 |= (u32)(800 * duty_cycle_percent);
+                TIM3->EGR |= 1UL;
+                TIM3->CR1 |= 1UL;
+            }
+            else if(pin.port == GPIOC) 
+            {
+                RCC->APBENR1 |= (1UL);
+                TIM2->CCMR2 |= (3UL << 13) | (1UL << 1);
+                TIM2->CCER |= (1UL << 12);
+                TIM2->CR1 |= (1UL << 7);
+                TIM2->PSC &= 0UL;
+                TIM2->ARR &= 0UL;
+                TIM2->ARR |= 799;
+                TIM2->CCR4 &= 0;
+                TIM2->CCR4 |= (u32)(800 * duty_cycle_percent);
+                TIM2->EGR |= 1UL;
+                TIM2->CR1 |= 1UL;
+            }
             break;
         case 14:
-            timer = TIM15;
+            RCC->APBENR2 |= (1UL << 16);
+            TIM15->CCMR1 |= (3UL << 5) | (1UL << 3);   // Set Output Compare 1 
+            TIM15->CCER |= (1UL);                         // 
+            TIM15->BDTR |= (1UL << 14);                  // Enable Compare 2 Output
+            TIM15->CR1 |=  (1UL << 7);                   // Enable Auto-Reload Preload
+            TIM15->PSC &= 0UL;
+            TIM15->ARR &= 0UL;
+            TIM15->ARR |= 799;
+            TIM15->CCR1 &= 0UL;
+            TIM15->CCR1 |= (u32)(800 * duty_cycle_percentage);
+            TIM15->EGR |= 1UL;
+            TIM15->CR1 |= 1UL;
             break;
         default: 
             break;
     }
 
-    if(timer == NULL)
-    {
-        return;
-    }
-    //if(timer->CR1 & 1UL) return; // Return if timer is already on.
-
-    f32 duty_cycle_percentage = duty_cycle / 255.0f;
-    
-    timer->CCMR1 |= (3UL << 5) | (1UL << 3); // Sets PWM Mode 1 (High -> Low)
-    timer->CCER |= 1UL;
-    timer->CR1 |= (1UL << 7);
-    timer->PSC &= 0UL; // Zero the Prescaler
-    timer->ARR &= 0UL; // Zero the Auto-Reload Register
-    timer->ARR |= 799; // Should result in 20kHz PWM Frequency with 0 Prescaler
-    timer->CCR1 &= 0UL;
-    timer->CCR1 |= (u32)(800 * duty_cycle_percentage);
-    timer->EGR |= 1UL;
-    timer->CR1 |= 1UL; // Enable the counter
 }
 
 
