@@ -19,7 +19,6 @@ typedef int32_t i32;
 typedef float f32;
 typedef double f64;
 
-
 // Helpful Constants
 #define SYS_CLOCK_HZ 16000000
 #define ONE_MS_TICKS ((SYS_CLOCK_HZ)/1000)
@@ -283,8 +282,6 @@ typedef struct{
 #define I2C2 ((I2C_TypeDef*)I2C2_BaseAddr)
 #define I2C3 ((I2C_TypeDef*)I2C3_BaseAddr)
 
-#define I2C1_CLKEN (1UL << 21)
-
 // Timer Addresses and Aliases
 
 /* Timer Clock Base List
@@ -440,9 +437,6 @@ void SerialInit(void);
 void pinMode(Pin_TypeDef pin, PinMode mode);
 void digitalWrite(Pin_TypeDef pin, Output_Type output);
 void analogWrite(Pin_TypeDef pin, uint8_t duty_cycle);
-
-// Pin Control LL functions
-//void setAltFunction(Pin_TypeDef pin, uint8_t alt_func_num);
 
 // Serial Helper Functions
 void begin(i32 baud_rate);
@@ -742,14 +736,14 @@ static void setupTimer(Pin_TypeDef pin, u8 duty_cycle)
         case 14:
             RCC->APBENR2 |= (1UL << 16);
             TIM15->CCMR1 |= (3UL << 5) | (1UL << 3);   // Set Output Compare 1 
-            TIM15->CCER |= (1UL);                         // 
-            TIM15->BDTR |= (1UL << 14);                  // Enable Compare 2 Output
-            TIM15->CR1 |=  (1UL << 7);                   // Enable Auto-Reload Preload
+            TIM15->CCER |= (1UL);                      // 
+            TIM15->BDTR |= (1UL << 14);                // Enable Compare 2 Output
+            TIM15->CR1 |=  (1UL << 7);                 // Enable Auto-Reload Preload
             TIM15->PSC &= 0UL;
             TIM15->ARR &= 0UL;
             TIM15->ARR |= 799;
             TIM15->CCR1 &= 0UL;
-            TIM15->CCR1 |= (u32)(800 * duty_cycle_percentage);
+            TIM15->CCR1 |= (u32)(800 * duty_cycle_percent);
             TIM15->EGR |= 1UL;
             TIM15->CR1 |= 1UL;
             break;
@@ -776,12 +770,11 @@ void SysTick_Handler(void)
 void initialiseMCU()
 {
     SysTickInit(ONE_MS_TICKS); 
-
     GPIOInit();
-    RCC->APBENR1 |= 1UL << 1; // Enable TIM3
 }
 
-// Setup the SysTick timer for use in implementing a basic "delay" function
+/* Setup the SysTick timer for use in implementing a basic "delay" function
+   [Pg. 275 in the ARMv6-M Architecture Reference Manual covers the SysTick timer] */
 void SysTickInit(u32 ticks)
 {
     //Clear SysTick Reset Value Register
@@ -918,13 +911,13 @@ void I2C_Init(void)
     setAltFunction(D14, 6);
     setAltFunction(D15, 6);
 
-    GPIOB->OTYPER |= (1UL << 8) | (1UL << 9);   // Set pins to Open-Drain
-    GPIOB->OSPEEDR |= (3UL << 8*2) | (3UL << 9*2); // Set pins to High Speed
-    GPIOB->PUPDR |= (1UL << 8*2) | (1UL << 9*2);
+    GPIOB->OTYPER |= (1UL << 8) | (1UL << 9);       // Set pins to Open-Drain
+    GPIOB->OSPEEDR |= (3UL << 8*2) | (3UL << 9*2);  // Set pins to High Speed
+    GPIOB->PUPDR |= (1UL << 8*2) | (1UL << 9*2);    // Set pins to have Pull-Up Resistors
     
-
-    // Sets timer up for 100kHz bus assuming a 16MHz input clock (Value from default MXCube build)
-    I2C1->TIMINGR = 0x00503D5A;
+    /* Sets timer up for 100kHz bus assuming a 16MHz input clock 
+       (Value from default MXCube build) */
+    I2C1->TIMINGR = 0x00503D5A; 
     
     I2C1->CR1 |= 1UL;   // Enable the peripheral
 }
@@ -932,10 +925,13 @@ void I2C_Init(void)
 void I2C_WriteByte(u8 addr, u8 data)
 {
     I2C1->CR2 &= 0UL; // Clear CR2 Register
+
+    /* Sets the peripheral address, number of bytes to send (1), 
+       enables automatic end, and generates a START condition */ 
     I2C1->CR2 |= (addr) | (1UL << 16) | (1UL << 25) | (1UL << 13);
     
-    while(!(I2C1->ISR & (1UL)));   // Wait for TX Register to be empty
-    I2C1->TXDR = data;
+    while(!(I2C1->ISR & (1UL)));   // Wait for Transmit Register to be empty
+    I2C1->TXDR = data;             // Write data to the Transmit Register
 
     while(!(I2C1->ISR & (1UL << 5)));   // Wait for STOP Flag
     I2C1->ICR |= (1UL << 5);   // Clear STOP Flag
@@ -944,25 +940,32 @@ void I2C_WriteByte(u8 addr, u8 data)
 void I2C_ReadByte(u8 addr, u8* data_buffer)
 {
     I2C1->CR2 &= 0UL; // Clear CR2 Register
+    
+    /* Sets the peripheral address, number of bytes to send (1), 
+       enables automatic end, sets peripheral to read data, and generates a START condition */ 
     I2C1->CR2 |= (addr) | (1UL << 16) | (1UL << 25) | (1UL << 10) | (1UL << 13);
 
-    while(!(I2C1->ISR & (1UL << 2)));
-    *data_buffer = I2C1->RXDR;
+    while(!(I2C1->ISR & (1UL << 2)));   // Waits while the receive register is empty
+    *data_buffer = I2C1->RXDR;          // Copy Receive register data into the data buffer
 
     while(!(I2C1->ISR & (1UL << 5)));   // Wait for STOP Flag
-    I2C1->ICR |= (1UL << 5);   // Clear STOP Flag
+    I2C1->ICR |= (1UL << 5);            // Clear STOP Flag
 }
 
 void I2C_WriteBytes(u8 addr, u8* data, u16 length)
 {
 
     I2C1->CR2 &= 0UL; // Clear CR2 Register
+
+    /* Sets the peripheral address, number of bytes to send (length), 
+       enables automatic end, and generates a START condition */
     I2C1->CR2 |= (addr) | (length << 16) | (1UL << 25) | (1UL << 13);
 
-    while(!(I2C1->ISR & 1UL));
-    I2C1->TXDR = data[0];
-    
-
+    while(!(I2C1->ISR & 1UL));  // Wait for Transmit Register to be empty
+    I2C1->TXDR = data[0];       // Write first byte data to the Transmit Register
+     
+    /* If more than one byte is to be sent, wait for the Transmit register 
+       to be empty, then write the next byte into the Transmit Register */
     if(length > 1)
     {
         for(u16 i = 1; i < length; i++)
@@ -972,18 +975,24 @@ void I2C_WriteBytes(u8 addr, u8* data, u16 length)
         }
     }
 
-    while(!(I2C1->ISR & (1UL << 5)));
-    I2C1->ICR |= (1UL << 5);
+    while(!(I2C1->ISR & (1UL << 5)));   // Wait for STOP Flag
+    I2C1->ICR |= (1UL << 5);            // Clear STOP Flag
 }
 
 void I2C_ReadBytes(u8 addr, u8* data_buffer, u16 length)
 {
     I2C1->CR2 &= 0UL; // Clear CR2 Register
+
+    /* Sets the peripheral address, number of bytes to read (length), 
+       enables automatic end, sets peripheral to read data, and generates a START condition */ 
     I2C1->CR2 |= (addr) | (length << 16) | (1UL << 25) | (1UL << 10) | (1UL << 13);
 
-    while(!(I2C1->ISR & (1UL << 2)));
-    *data_buffer = I2C1->RXDR;
+    while(!(I2C1->ISR & (1UL << 2)));   // Waits while the receive register is empty
+    *data_buffer = I2C1->RXDR;          // Copy the Receive register into the start of the data buffer
 
+    /* If more than one byte is to be read, wait for the Receive register to be full again,
+       then copy the Receive Register into the next empty byte in the data buffer 
+       (via pointer arithmetic) */
     if(length > 1)
     {
         for(u8 i = 1; i < length; i++)
@@ -993,8 +1002,8 @@ void I2C_ReadBytes(u8 addr, u8* data_buffer, u16 length)
         }
     }
 
-    while(!(I2C1->ISR & (1UL << 5)));
-    I2C1->ICR |= (1UL << 5);
+    while(!(I2C1->ISR & (1UL << 5)));   // Wait for STOP Flag
+    I2C1->ICR |= (1UL << 5);            // Clear STOP Flag
 }
 
 /*
