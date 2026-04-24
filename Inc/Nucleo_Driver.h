@@ -874,12 +874,14 @@ void SysTickInit(u32 ticks)
 void GPIOInit()
 {
     // Enable GPIOA-F Clocks
+    // [Pg. 192 in the STM32G0x1 Reference Manual (RM0444)]
     RCC->IOPENR |= 0x3F;
 }
 
 void pinMode(Pin_TypeDef pin, PinMode mode)
-{
+{   
     // Clear current mode by zeroing the relevant bits
+    // [Pg. 238 in the STM32G0x1 Reference Manual (RM0444)]
     (pin.port)->MODER &= ~(0x3UL << (2 * pin.num)); 
 
     // Set new mode
@@ -889,7 +891,7 @@ void pinMode(Pin_TypeDef pin, PinMode mode)
 void digitalWrite(Pin_TypeDef pin, Output_Type output)
 {
     // Set or reset pin by writing to Bit Set/Reset Register (BSSR) 
-    // [pg. 241 of STM32G0x1 reference manual]
+    // [Pg. 241 in the STM32G0x1 Reference Manual (RM0444)]
     (pin.port)->BSRR |= 1UL << (pin.num + 16*(!output));
 }
 
@@ -907,10 +909,10 @@ u16 analogRead(Pin_TypeDef pin)
     }
 
     analogSetup(pin);
-    ADC1->CR |= (1UL << 2);             // Set ADSTART Bit
-    //while(!(ADC1->ISR & (1UL << 2)));   // Wait for converstion to finish
 
-    u16 raw_adc_data = ADC1->DR;
+    ADC1->CR |= (1UL << 2);             // Set ADSTART Bit
+
+    u16 raw_adc_data = ADC1->DR;        // Read in measured value from the ADC Data Register
     return raw_adc_data;
 }
 
@@ -920,6 +922,7 @@ void begin(i32 baud_rate)
     // Initialise USART2 for Serial use
 
     // Enable USART2 Clock
+    // [Pg. 188 in the STM32G0x1 Reference Manual (RM0444)]
     RCC->APBENR1 |= 1UL << 17; 
 
     // Set Serial Pins for ALT functions
@@ -988,10 +991,7 @@ void println_float(f32 num)
 }
 
 /*
-*
 *   I2C Helper Functions
-*
-*
 */
 
 void I2C_Init(void)
