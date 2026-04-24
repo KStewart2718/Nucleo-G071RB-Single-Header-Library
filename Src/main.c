@@ -27,20 +27,23 @@ int main(void)
 {
     // Setup
 	initialiseMCU();
+    Serial.begin(9600);
     
-    pinMode(D6, ANALOG);
+    pinMode(A5, ANALOG);
   //  pinMode(D5, ANALOG);
   //  pinMode(D6, ANALOG);
    // pinMode(D9, ANALOG);
    // pinMode(D10, ANALOG);
    // pinMode(D11, ANALOG);
-
-    analogWrite(D6, 200);
+    u16 raw_data = 0;
+    
     
     /* Loop forever */
     while(1)
     {
-
-        
+        raw_data = analogRead(A5);
+        Serial.print("Measured Voltage: ");
+        Serial.println_int(raw_data);
+        delay(500);
     }
 }

@@ -1,3 +1,22 @@
+/*
+Copyright 2026 Kalebh Stewart
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+and associated documentation files (the “Software”), to deal in the Software without restriction, 
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+
 #ifndef NUCLEO_DRIVER_H
 #define NUCLEO_DRIVER_H
 
@@ -66,8 +85,11 @@ typedef struct {
     volatile u32 AWD3TR;
     u32 RESERVED_BLOCK_2[4];
     volatile u32 DR;
+    u32 RESERVED_BLOCK_3[24];
     volatile u32 AWD2CR;
     volatile u32 AWD3CR;
+    u32 RESERVED_BLOCK_4[3];
+    volatile u32 CALFACT;
 } ADC_TypeDef;
 
 typedef struct {
@@ -311,6 +333,11 @@ typedef struct{
 #define TIM16 ((TIM_TypeDef*)TIM16_BaseAddr)
 #define TIM17 ((TIM_TypeDef*)TIM17_BaseAddr)
 
+// ADC Alias
+
+#define ADC_BaseAddr 0x40012400
+#define ADC1 ((ADC_TypeDef*)ADC_BaseAddr)
+
 // Pin Aliases for STM32 Pin Labels and Arduino Pin Labels
 #define PA0 (Pin_TypeDef){GPIOA, PIN_0}
 #define PA1 (Pin_TypeDef){GPIOA, PIN_1}
@@ -436,7 +463,8 @@ void SerialInit(void);
 // Pin Control Functions
 void pinMode(Pin_TypeDef pin, PinMode mode);
 void digitalWrite(Pin_TypeDef pin, Output_Type output);
-void analogWrite(Pin_TypeDef pin, uint8_t duty_cycle);
+void analogWrite(Pin_TypeDef pin, uint8_t duty_cycle); // PWM
+u16 analogRead(Pin_TypeDef pin); 
 
 // Serial Helper Functions
 void begin(i32 baud_rate);
@@ -465,8 +493,8 @@ extern volatile u32 Tick;
 #ifdef STM_DRIVER_IMPLEMENTATION
 
 // Helper Variable Definitions
-Serial_TypeDef Serial = {USART2, begin, print, println, \
-    print_int, print_float, println_int, println_float};
+Serial_TypeDef Serial = {USART2, begin, print, println, print_int,\
+                          print_float, println_int, println_float};
 
 volatile u32 Tick = 0;
 
@@ -659,7 +687,6 @@ static void setPWMMode(Pin_TypeDef pin)
 static void setupTimer(Pin_TypeDef pin, u8 duty_cycle)
 {
     f32 duty_cycle_percent = duty_cycle / 255.0f;
-    TIM_TypeDef* timer;
 
     switch(pin.num)
     {
@@ -753,6 +780,60 @@ static void setupTimer(Pin_TypeDef pin, u8 duty_cycle)
 
 }
 
+static void analogSetup(Pin_TypeDef pin)
+{
+    /*  -> Enable ADC and relevant channel for pin
+            - Run Calibration (Set ADCAL bit, requires ADVREGEN = 1, ADEN = 0 and AUTOFF = 0)
+              ADCAL stays 1 until complete (calibration factor exists in register ADC_DR[6:0])
+]           - Increment the cal factor and write to ADC_CALFACT
+            - 
+    */
+    u32 calibration_factor = 0;
+
+    RCC->APBENR2 |= (1UL << 20);                // Enable ADC Clock
+
+    ADC1->CR |= (1UL << 28);                    // Enable ADC Voltage Regulator
+    ADC1->CFGR1 &= ~(1UL << 15);                // Disable Auto Off
+    ADC1->CR |= (1UL << 31);                    // Enable Calibration
+    //while(ADC1->CR & (1UL << 31));              // Wait for Calibration to complete
+    calibration_factor = ADC1->CR;               // Store Calibration Factor
+    ADC1->CALFACT = calibration_factor + 1;     // Increment Calibration Factor and write to CALFACT register
+
+    ADC1->ISR &= ~(1UL);                        // Clear ADRDY bit
+    ADC1->CR |= (1UL);                          // Enable ADC
+    //while(!(ADC1->ISR & 1UL));                   // Wait for ADRDY to be set
+    ADC1->SMPR |= (5UL);                        // Set Sample Time to 39.5 ADC Clock Cycles
+
+    ADC1->ISR &= ~(1UL << 13);                  // Reset CCRDY bit before Channel Config
+    ADC1->CHSELR &= 0UL;                        // Clear Channel Selction Register
+
+    switch(pin.num)
+    {
+        case 0:
+            // Channel 0
+            ADC1->CHSELR |= (1UL);
+            break;
+        case 1:
+            // A-> Ch1, B-> Ch9
+            if(pin.port == GPIOA) ADC1->CHSELR |= (1UL << 1);
+            else if(pin.port == GPIOB) ADC1->CHSELR |= (1UL << 9);
+            break;
+        case 4:
+            // ch9
+            ADC1->CHSELR |= (1UL << 4);
+            break;
+        case 11:
+            //ch15
+            ADC1->CHSELR |= (1UL << 15);
+            break;
+        case 12:
+            //ch16
+            ADC1->CHSELR |= (1UL << 16);
+            break;
+        default:
+            break;
+    }
+}
 
 // Interrupt Handler for tracking millisecond time steps
 void SysTick_Handler(void)
@@ -816,6 +897,21 @@ void analogWrite(Pin_TypeDef pin, u8 duty_cycle)
 {
     setPWMMode(pin);
     setupTimer(pin, duty_cycle);
+}
+
+u16 analogRead(Pin_TypeDef pin)
+{
+    if(!(pin.port->MODER & (3 << (2 * pin.num))))
+    {
+        pinMode(pin, ANALOG);
+    }
+
+    analogSetup(pin);
+    ADC1->CR |= (1UL << 2);             // Set ADSTART Bit
+    //while(!(ADC1->ISR & (1UL << 2)));   // Wait for converstion to finish
+
+    u16 raw_adc_data = ADC1->DR;
+    return raw_adc_data;
 }
 
 // Serial Functions Definitions
