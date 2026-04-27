@@ -43,6 +43,8 @@ typedef double f64;
 #define ONE_MS_TICKS ((SYS_CLOCK_HZ)/1000)
 
 // Types for various register structures on STM32G071RB
+
+//[Pg. 213 in the STM32G0x1 Reference Manual (RM0444)]
 typedef struct {
     volatile u32 CR;
     volatile u32 ICSCR;
@@ -71,6 +73,7 @@ typedef struct {
     volatile u32 CSR;
 } RCC_TypeDef;
 
+//[Pg. 397 in the STM32G0x1 Reference Manual (RM0444)]
 typedef struct {
     volatile u32 ISR;
     volatile u32 IER;
@@ -92,6 +95,7 @@ typedef struct {
     volatile u32 CALFACT;
 } ADC_TypeDef;
 
+//[Pg. 435 in the STM32G0x1 Reference Manual (RM0444)]
 typedef struct {
     volatile u32 CR;
     volatile u32 SWTRGR;
@@ -115,6 +119,7 @@ typedef struct {
     volatile u32 SHRR;
 } DAC_TypeDef;
 
+//[Pg. 1069 in the STM32G0x1 Reference Manual (RM0444)]
 typedef struct{
     volatile u32 CR1;
     volatile u32 CR2;
@@ -130,6 +135,7 @@ typedef struct{
     volatile u32 PRESC;
 } USART_TypeDef;
 
+//[Pg. 983 in the STM32G0x1 Reference Manual (RM0444)]
 typedef struct{
     volatile u32 CR1;
     volatile u32 CR2;
@@ -144,6 +150,7 @@ typedef struct{
     volatile u32 TXDR;
 } I2C_TypeDef;
 
+//[Pg. 1181 in the STM32G0x1 Reference Manual (RM0444)]
 typedef struct{
     volatile u32 CR1;
     volatile u32 CR2;
@@ -156,6 +163,7 @@ typedef struct{
     volatile u32 I2SPR;
 } SPI_TypeDef;
 
+//[Pg. 614 in the STM32G0x1 Reference Manual (RM0444)]
 typedef struct {
     volatile u32 CR1;
     volatile u32 CR2;
@@ -186,6 +194,7 @@ typedef struct {
     volatile u32 TISEL;
 } TIM_TypeDef;
 
+//[Pg. 245 in the STM32G0x1 Reference Manual (RM0444)]
 typedef struct{
     volatile u32 MODER;
     volatile u32 OTYPER;
@@ -251,6 +260,7 @@ typedef struct{
 } Serial_TypeDef;
 
 // Registers in Core for SysTick
+//[Pg. 238 in the ARMv6-M Architecture Reference Manual covers the SysTick timer] 
 #define SYST_CSR (u32*)0xE000E010
 #define SYST_RVR (u32*)0xE000E014
 #define SYST_CVR (u32*)0xE000E018
@@ -258,11 +268,12 @@ typedef struct{
 #define SYS_HPR3 (u32*)0xE000ED20
 
 // Reset and Clock Control Register Address and Alias
+//[Pg. 64 in the STM32G0x1 Reference Manual (RM0444)]
 #define RCC_BaseAddr 0x40021000
 #define RCC ((RCC_TypeDef*)RCC_BaseAddr)
 
-
 // GPIO Addresses and Aliases 
+//[Pg. 64 in the STM32G0x1 Reference Manual (RM0444)]
 #define GPIO_OFFSET 0x400
 
 #define GPIOA_BaseAddr 0x50000000
@@ -284,6 +295,7 @@ typedef struct{
 #define GPIOF ((GPIO_TypeDef*)GPIOF_BaseAddr)
 
 // USART Addresses and Aliases
+//[Pg. 65/66 in the STM32G0x1 Reference Manual (RM0444)]
 #define USART1_BaseAddr 0x40013800
 #define USART2_BaseAddr 0x40004400
 #define USART3_BaseAddr 0x40004800
@@ -296,6 +308,7 @@ typedef struct{
 
 // I2C Addresses and Aliases
 // Clocks enabled in APBENR1, I2C 1 - Bit 21, I2C2 - Bit 22, I2C3 - Bit 23
+//[Pg. 65/66 in the STM32G0x1 Reference Manual (RM0444)]
 #define I2C1_BaseAddr 0x40005400
 #define I2C2_BaseAddr 0x40005800
 #define I2C3_BaseAddr 0x40008800
@@ -304,7 +317,21 @@ typedef struct{
 #define I2C2 ((I2C_TypeDef*)I2C2_BaseAddr)
 #define I2C3 ((I2C_TypeDef*)I2C3_BaseAddr)
 
+// SPI Addresses and Aliases
+// Clocks enabled in APBENR1, SPI2 - Bit 14, SPI3 - Bit 15
+// Clocks enabled in APBENR2, SPI1 - Bit 12
+//[Pg. 65/66 in the STM32G0x1 Reference Manual (RM0444)]
+
+#define SPI1_BaseAddr 0x40013000
+#define SPI2_BaseAddr 0x40003800
+#define SPI3_BaseAddr 0x40003C00
+
+#define SPI1 ((SPI_TypeDef*)SPI1_BaseAddr)
+#define SPI2 ((SPI_TypeDef*)SPI2_BaseAddr)
+#define SPI3 ((SPI_TypeDef*)SPI3_BaseAddr)
+
 // Timer Addresses and Aliases
+//[Pg. 64-66 in the STM32G0x1 Reference Manual (RM0444)]
 
 /* Timer Clock Base List
 *  2,3,4,6,7 - APBENR1
@@ -334,6 +361,7 @@ typedef struct{
 #define TIM17 ((TIM_TypeDef*)TIM17_BaseAddr)
 
 // ADC Alias
+//[Pg. 65 in the STM32G0x1 Reference Manual (RM0444)]
 
 #define ADC_BaseAddr 0x40012400
 #define ADC1 ((ADC_TypeDef*)ADC_BaseAddr)
@@ -421,10 +449,10 @@ typedef struct{
 #define D7 PA8
 #define D8 PA9
 #define D9 PC7      // PWM
-#define D10 PB0     // PWM
-#define D11 PA7     // PWM
-#define D12 PA6
-#define D13 PA5     // Bulit-in LED and DAC Output
+#define D10 PB0     // PWM and SPI1_CS
+#define D11 PA7     // PWM and SPI1_MOSI
+#define D12 PA6     // SPI1_MISO
+#define D13 PA5     // Bulit-in LED, DAC Output and SPI1_SCK
 #define D14 PB9     // I2C_SDA
 #define D15 PB8     // I2C_SCL
 
@@ -459,6 +487,8 @@ void initialiseMCU(void);
 void SysTickInit(u32 ticks);
 void GPIOInit(void);
 void SerialInit(void);
+void I2C_Init(void);
+void SPI_Init(void);
 
 // Pin Control Functions
 void pinMode(Pin_TypeDef pin, PinMode mode);
@@ -476,7 +506,6 @@ void print_float(f32 num);
 void println_float(f32 num);
 
 // I2C Helper Functions
-void I2C_Init(void);
 void I2C_WriteByte(u8 addr, u8 data);
 void I2C_ReadByte(u8 addr, u8* data_buffer);
 void I2C_WriteBytes(u8 addr, u8* data, u16 length);
@@ -910,9 +939,11 @@ u16 analogRead(Pin_TypeDef pin)
 
     analogSetup(pin);
 
-    ADC1->CR |= (1UL << 2);             // Set ADSTART Bit
+    // Set ADSTART Bit
+    ADC1->CR |= (1UL << 2);             
 
-    u16 raw_adc_data = ADC1->DR;        // Read in measured value from the ADC Data Register
+    // Read in measured value from the ADC Data Register
+    u16 raw_adc_data = ADC1->DR;        
     return raw_adc_data;
 }
 
@@ -996,10 +1027,11 @@ void println_float(f32 num)
 
 void I2C_Init(void)
 {
+    // Ensures peripheral is disabled
+    I2C1->CR1 &= ~(1UL);    
 
-    I2C1->CR1 &= ~(1UL);    // Ensures peripheral is disabled
-
-    RCC->APBENR1 |= 1UL << 21;  // Enable I2C1 Clock
+    // Enable I2C1 Clock
+    RCC->APBENR1 |= 1UL << 21;  
 
     pinMode(D14, ALTERNATE);
     pinMode(D15, ALTERNATE);
@@ -1014,8 +1046,9 @@ void I2C_Init(void)
     /* Sets timer up for 100kHz bus assuming a 16MHz input clock 
        (Value from default MXCube build) */
     I2C1->TIMINGR = 0x00503D5A; 
-    
-    I2C1->CR1 |= 1UL;   // Enable the peripheral
+     
+    // Enable the peripheral
+    I2C1->CR1 |= 1UL;  
 }
 
 void I2C_WriteByte(u8 addr, u8 data)
@@ -1103,10 +1136,7 @@ void I2C_ReadBytes(u8 addr, u8* data_buffer, u16 length)
 }
 
 /*
-*
 *   Helper Function Definitions
-*
-*
 */
 void delay(u32 milliseconds)
 {    
