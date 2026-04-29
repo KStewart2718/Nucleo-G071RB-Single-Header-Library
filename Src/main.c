@@ -17,6 +17,7 @@
  */
 
 #include <stdint.h>
+#include <float.h>
 #include <sys/errno.h>
 #define STM_DRIVER_IMPLEMENTATION
 #include "Nucleo_Driver.h"
@@ -29,21 +30,20 @@ int main(void)
 	initialiseMCU();
     Serial.begin(9600);
     
-    pinMode(A5, ANALOG);
+    //pinMode(A5, ANALOG);
   //  pinMode(D5, ANALOG);
   //  pinMode(D6, ANALOG);
    // pinMode(D9, ANALOG);
    // pinMode(D10, ANALOG);
    // pinMode(D11, ANALOG);
-    u16 raw_data = 0;
+   // u16 raw_data = 0;
     
     
     /* Loop forever */
     while(1)
     {
-        raw_data = analogRead(A5);
-        Serial.print("Measured Voltage: ");
-        Serial.println_int(raw_data);
-        delay(500);
+        float test = 16846.3;
+        Serial.println_float(test);
+        delay(2000);
     }
 }

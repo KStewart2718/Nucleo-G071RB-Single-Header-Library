@@ -595,7 +595,7 @@ static i32 tiny_itoa(i32 num, char* str, i32 trailing_zeros)
 
 static void tiny_ftoa(f32 num, char* str, i32 precision)
 {
-    char temp_buffer[32];
+    char temp_buffer[32] = {0};
 
     i32 integer_part = (i32)num;
     f32 fractional_part = num - integer_part;
@@ -623,7 +623,7 @@ static void tiny_sprintf(char* buffer, const char* format, ...)
     va_list args;
     va_start(args, format);
 
-    char tmp_buff[12] = {0};
+    char tmp_buff[24] = {0};
     i32 integer_num = 0;
     f64 floating_point_num = 0;
 
@@ -997,7 +997,7 @@ void println(char* str)
 
 void print_int(i32 num)
 {
-    char temp_string[11] = {0};
+    char temp_string[12] = {0};     // Longest int is -2147483648, which is 11 characters long 
     tiny_sprintf(temp_string, "%i", num);
     Serial.print(temp_string);
 }
@@ -1010,7 +1010,7 @@ void println_int(i32 num)
 
 void print_float(f32 num)
 {
-    char temp_string[16] = {0};
+    char temp_string[10] = {0};
     tiny_sprintf(temp_string, "%f", num);
     Serial.print(temp_string);
 }
