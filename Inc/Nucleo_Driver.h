@@ -509,6 +509,15 @@ void println_float(f32 num);
 void I2C_WriteByte(u8 addr, u8 data);
 void I2C_ReadByte(u8 addr, u8* data_buffer);
 void I2C_WriteBytes(u8 addr, u8* data, u16 length);
+void I2C_ReadBytes(u8 addr, u8 *data_buffer, u16 length);
+
+// SPI Helper Functions
+void SPI_SetAsController();
+void SPI_SetAsPeripheral();
+void SPI_WriteByte(u8 data);
+void SPI_ReadByte(u8* data_buffer);
+void SPI_WriteBytes(u8* data, u16 length);
+void SPI_ReadBytes(u8* data_buffer, u16 length);
 
 // Delay Helper Function
 void delay(u32 milliseconds);
@@ -971,7 +980,7 @@ void begin(i32 baud_rate)
 
     // Enables the Transmitter and the USART peripheral
     // [Pg. 1036 in the STM32G0x1 Reference Manual]
-    USART2->CR1 |= (1UL << 3) | (1U << 0);
+    USART2->CR1 |= (1UL << 3) | (1UL << 0);
 }
 
 void print(char* str)
@@ -1133,6 +1142,75 @@ void I2C_ReadBytes(u8 addr, u8* data_buffer, u16 length)
 
     while(!(I2C1->ISR & (1UL << 5)));   // Wait for STOP Flag
     I2C1->ICR |= (1UL << 5);            // Clear STOP Flag
+}
+
+/*
+*   SPI Helper Function Definitions
+*/
+void SPI_Init()
+{
+    // Assuming Controller Mode for Initialisation
+
+    pinMode(PA7, ALTERNATE);
+    pinMode(PA6, ALTERNATE);
+    pinMode(PA5, ALTERNATE);
+    pinMode(PB0, ALTERNATE);
+
+    GPIOA->OSPEEDR |= (3UL << 10) | (3UL << 12) | (3UL << 14);
+    GPIOB->OSPEEDR |= (3UL);
+
+    setAltFunction(PA7, 0);
+    setAltFunction(PA6, 0);
+    setAltFunction(PA5, 0);
+    setAltFunction(PB0, 0);
+
+    RCC->APBENR2 |= (1UL << 12); // Enable SPI1 Clock
+
+    SPI1->CR1 |= (3UL << 3);     // Set SPI prescaler to 16 (CLK should be approx. 1MHz)
+    SPI1->CR1 |= (0UL);          // Set Clock Phase and Polarity
+    SPI1->CR1 &= ~(1UL << 10);   // Disable Receive Only Mode
+    SPI1->CR1 &= ~(1UL << 15);   // Set 2-line unidirectional mode
+    SPI1->CR1 &= ~(1UL << 7);    // Transmit data with Most Significant Bit first
+    SPI1->CR1 |= (1UL << 9);     // Enable Software Peripheral Management (CS Pin controlled by Bit 8)
+    SPI1->CR1 |= (1UL << 8);     // Set CS pin to high (CS is active low for SPI)
+    SPI1->CR1 |= (1UL << 2);     // Set to Controller Mode
+
+    SPI1->CR2 |= (7UL << 8);     // Set data size to 8 bite (1 byte)
+    SPI1->CR2 |= (1UL << 2);     // Enable output on CS pin
+    SPI1->CR2 |= (1UL << 12);    // Set threshhold for RXNE (Recieve Register Not Empty) event to 8 bits
+}
+
+void SPI_WriteByte(u8 data)
+{
+    SPI1->CR1 |= (1UL << 6);        // Enable SPI 
+    
+    while(!(SPI1->SR & (1UL << 1)));
+    *(volatile u8*)&SPI1->DR = data;    // Witchcraft to set correct data transfer size
+
+    while(SPI1->SR & (3UL << 11));  // Waits until buffer is empty
+    while(SPI1->SR & (1UL << 7));     // Waits unitl SPI bus is not busy
+    SPI1->CR1 &= ~(1UL << 6);       // Disable SPI
+    
+    while(SPI1->SR & (3UL << 9))
+    {
+        u8 _ = SPI1->DR;
+    }
+}
+
+void SPI_ReadByte(u8* data_buffer)
+{
+    while(SPI1->SR & (1UL << 7));
+    SPI1->CR1 |= (1UL << 6);        // Enable SPI
+
+    while(!(SPI1->SR & (1UL)));     // Wait for Rx buffer to not be empty
+    *data_buffer = SPI1->DR;
+
+    while(SPI1->SR & (3UL << 9))
+    {
+        u8 _ = SPI1->DR; 
+    }
+    while(SPI1->SR & (1UL << 7));
+    SPI1->CR1 &= ~(1UL << 6);
 }
 
 /*

@@ -28,7 +28,7 @@ int main(void)
 {
     // Setup
 	initialiseMCU();
-    Serial.begin(9600);
+    SPI_Init();
     
     //pinMode(A5, ANALOG);
   //  pinMode(D5, ANALOG);
@@ -42,8 +42,15 @@ int main(void)
     /* Loop forever */
     while(1)
     {
-        float test = 16846.3;
-        Serial.println_float(test);
-        delay(2000);
+        for(u8 i = 0; i < 128; i++)
+        {
+            SPI_WriteByte(i);
+            delay(200);
+            //  delay(500);
+            //  SPI_ReadByte(&buffer);
+            //  Serial.println_int(buffer);
+            //  delay(500);
+        }
+        
     }
 }
